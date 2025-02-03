@@ -11,3 +11,15 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false
+features = [
+    "run-for-all",
+    "prepush-hook",
+    "precommit-hook",
+    "run-cargo-test",
+    "run-cargo-clippy",
+    "run-cargo-fmt",
+]
