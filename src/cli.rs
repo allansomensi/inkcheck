@@ -49,19 +49,19 @@ pub fn parse_args() -> Result<SnmpClientParams, AppError> {
 pub fn show_printer_values(printer: Printer) {
     println!("Name: {}", printer.name);
 
-    if let Some(level) = printer.black_toner_level_percent {
+    if let Some(level) = printer.black_toner.level_percent {
         println!("Black Toner: {level}%");
     }
 
-    if let Some(level) = printer.cyan_toner_level_percent {
+    if let Some(level) = printer.cyan_toner.level_percent {
         println!("Cyan Toner: {level}%");
     }
 
-    if let Some(level) = printer.magenta_toner_level_percent {
+    if let Some(level) = printer.magenta_toner.level_percent {
         println!("Magenta Toner: {level}%");
     }
 
-    if let Some(level) = printer.yellow_toner_level_percent {
+    if let Some(level) = printer.yellow_toner.level_percent {
         println!("Yellow Toner: {level}%");
     }
 }
