@@ -1,7 +1,7 @@
+use crate::error::AppError;
 use include_dir::{include_dir, Dir};
 use serde_json::Value;
-
-use crate::error::AppError;
+use std::fmt::{self, Display, Formatter};
 
 /// Represents the different types of supplies.
 pub enum PrinterSupply {
@@ -9,13 +9,19 @@ pub enum PrinterSupply {
     // TODO! Drum
 }
 
-impl ToString for PrinterSupply {
-    fn to_string(&self) -> String {
+impl Display for PrinterSupply {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::Toner => "Toner".to_string(),
-            // Self::Drum => "Drum".to_string(),
+            Self::Toner => write!(f, "Toner"),
+            // Self::Drum => write!(f, "Drum"),
         }
     }
+}
+
+pub struct Toner {
+    pub level: i64,
+    pub max_level: i64,
+    pub level_percent: Option<i64>,
 }
 
 /// Represents the different colors of toner cartridges.
@@ -26,13 +32,13 @@ pub enum TonerColor {
     Yellow,
 }
 
-impl ToString for TonerColor {
-    fn to_string(&self) -> String {
+impl Display for TonerColor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Black => "Black".to_string(),
-            Self::Cyan => "Cyan".to_string(),
-            Self::Magenta => "Magenta".to_string(),
-            Self::Yellow => "Yellow".to_string(),
+            Self::Black => write!(f, "Black"),
+            Self::Cyan => write!(f, "Cyan"),
+            Self::Magenta => write!(f, "Magenta"),
+            Self::Yellow => write!(f, "Yellow"),
         }
     }
 }
@@ -44,50 +50,26 @@ impl ToString for TonerColor {
 /// It also includes the maximum toner levels and the percentage of toner remaining for each color.
 pub struct Printer {
     pub name: String,
-    pub black_toner_level: i64,
-    pub black_toner_max_level: i64,
-    pub black_toner_level_percent: Option<i64>,
-    pub cyan_toner_level: i64,
-    pub cyan_toner_max_level: i64,
-    pub cyan_toner_level_percent: Option<i64>,
-    pub magenta_toner_level: i64,
-    pub magenta_toner_max_level: i64,
-    pub magenta_toner_level_percent: Option<i64>,
-    pub yellow_toner_level: i64,
-    pub yellow_toner_max_level: i64,
-    pub yellow_toner_level_percent: Option<i64>,
+    pub black_toner: Toner,
+    pub cyan_toner: Toner,
+    pub magenta_toner: Toner,
+    pub yellow_toner: Toner,
 }
 
 impl Printer {
     pub fn new(
         name: String,
-        black_toner_level: i64,
-        black_toner_max_level: i64,
-        black_toner_level_percent: Option<i64>,
-        cyan_toner_level: i64,
-        cyan_toner_max_level: i64,
-        cyan_toner_level_percent: Option<i64>,
-        magenta_toner_level: i64,
-        magenta_toner_max_level: i64,
-        magenta_toner_level_percent: Option<i64>,
-        yellow_toner_level: i64,
-        yellow_toner_max_level: i64,
-        yellow_toner_level_percent: Option<i64>,
+        black_toner: Toner,
+        cyan_toner: Toner,
+        magenta_toner: Toner,
+        yellow_toner: Toner,
     ) -> Self {
         Self {
             name,
-            black_toner_level,
-            black_toner_max_level,
-            black_toner_level_percent,
-            cyan_toner_level,
-            cyan_toner_max_level,
-            cyan_toner_level_percent,
-            magenta_toner_level,
-            magenta_toner_max_level,
-            magenta_toner_level_percent,
-            yellow_toner_level,
-            yellow_toner_max_level,
-            yellow_toner_level_percent,
+            black_toner,
+            cyan_toner,
+            magenta_toner,
+            yellow_toner,
         }
     }
 
@@ -98,10 +80,10 @@ impl Printer {
     /// If the maximum toner level is zero, it returns 0 to prevent division by zero.
     pub fn calc_toner_level_percent(&self, color: TonerColor) -> i64 {
         let (level, max_level) = match color {
-            TonerColor::Black => (self.black_toner_level, self.black_toner_max_level),
-            TonerColor::Cyan => (self.cyan_toner_level, self.cyan_toner_max_level),
-            TonerColor::Magenta => (self.magenta_toner_level, self.magenta_toner_max_level),
-            TonerColor::Yellow => (self.yellow_toner_level, self.yellow_toner_max_level),
+            TonerColor::Black => (self.black_toner.level, self.black_toner.max_level),
+            TonerColor::Cyan => (self.cyan_toner.level, self.cyan_toner.max_level),
+            TonerColor::Magenta => (self.magenta_toner.level, self.magenta_toner.max_level),
+            TonerColor::Yellow => (self.yellow_toner.level, self.yellow_toner.max_level),
         };
 
         if max_level == 0 {
@@ -126,7 +108,6 @@ pub fn load_printer(brand: &str, model: &str) -> Result<Value, AppError> {
 
     DATA_DIR
         .files()
-        .into_iter()
         .find(|file| {
             file.path().extension().and_then(|ext| ext.to_str()) == Some("json")
                 && file
