@@ -18,6 +18,7 @@ impl Display for PrinterSupply {
     }
 }
 
+#[derive(Clone)]
 pub struct Toner {
     pub level: i64,
     pub max_level: i64,
@@ -73,26 +74,36 @@ impl Printer {
         }
     }
 
-    /// Calculates the percentage of toner remaining for a given color.
+    /// Calculates and updates the toner level percentage for each toner color in the struct.
     ///
-    /// This function calculates the percentage of toner left in the specified toner cartridge
-    /// by dividing the current toner level by the maximum toner level, and then multiplying by 100.
-    /// If the maximum toner level is zero, it returns 0 to prevent division by zero.
-    pub fn calc_toner_level_percent(&self, color: TonerColor) -> i64 {
-        let (level, max_level) = match color {
-            TonerColor::Black => (self.black_toner.level, self.black_toner.max_level),
-            TonerColor::Cyan => (self.cyan_toner.level, self.cyan_toner.max_level),
-            TonerColor::Magenta => (self.magenta_toner.level, self.magenta_toner.max_level),
-            TonerColor::Yellow => (self.yellow_toner.level, self.yellow_toner.max_level),
+    /// This function computes the percentage of toner remaining for each color (black, cyan, magenta, and yellow)
+    /// by dividing the current toner level by the maximum toner level and multiplying by 100.
+    /// If the maximum toner level is zero, the function safely sets the corresponding toner percentage to `None`
+    /// to avoid division by zero.
+    ///
+    /// The calculated percentage is assigned directly to the `level_percent` field of the respective toner color
+    /// within the struct.
+    pub fn calc_and_update_toners_level_percent(&mut self) {
+        let calculate_level_percent = |level: i64, max_level: i64| {
+            if max_level == 0 {
+                None
+            } else {
+                Some(
+                    (level * 100)
+                        .checked_div(max_level)
+                        .expect("Error calculating toner level"),
+                )
+            }
         };
 
-        if max_level == 0 {
-            return 0;
-        }
-
-        (level * 100)
-            .checked_div(max_level)
-            .expect("Error calculating toner level")
+        self.black_toner.level_percent =
+            calculate_level_percent(self.black_toner.level, self.black_toner.max_level);
+        self.cyan_toner.level_percent =
+            calculate_level_percent(self.cyan_toner.level, self.cyan_toner.max_level);
+        self.magenta_toner.level_percent =
+            calculate_level_percent(self.magenta_toner.level, self.magenta_toner.max_level);
+        self.yellow_toner.level_percent =
+            calculate_level_percent(self.yellow_toner.level, self.yellow_toner.max_level);
     }
 }
 

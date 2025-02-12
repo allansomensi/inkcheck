@@ -310,41 +310,15 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         level_percent: None,
     };
 
-    let printer = Printer::new(
+    let mut printer = Printer::new(
         name.clone(),
-        black_toner,
-        cyan_toner,
-        magenta_toner,
-        yellow_toner,
+        black_toner.clone(),
+        cyan_toner.clone(),
+        magenta_toner.clone(),
+        yellow_toner.clone(),
     );
 
-    // Calculated values
-
-    let black_toner = Toner {
-        level: get_snmp_value(&black_toner_level_oid, params)?,
-        max_level: get_snmp_value(&black_toner_max_level_oid, params)?,
-        level_percent: Some(printer.calc_toner_level_percent(TonerColor::Black)),
-    };
-
-    let cyan_toner = Toner {
-        level: get_snmp_value(&cyan_toner_level_oid, params)?,
-        max_level: get_snmp_value(&cyan_toner_max_level_oid, params)?,
-        level_percent: Some(printer.calc_toner_level_percent(TonerColor::Cyan)),
-    };
-
-    let magenta_toner = Toner {
-        level: get_snmp_value(&magenta_toner_level_oid, params)?,
-        max_level: get_snmp_value(&magenta_toner_max_level_oid, params)?,
-        level_percent: Some(printer.calc_toner_level_percent(TonerColor::Magenta)),
-    };
-
-    let yellow_toner = Toner {
-        level: get_snmp_value(&yellow_toner_level_oid, params)?,
-        max_level: get_snmp_value(&yellow_toner_max_level_oid, params)?,
-        level_percent: Some(printer.calc_toner_level_percent(TonerColor::Yellow)),
-    };
-
-    let printer = Printer::new(name, black_toner, cyan_toner, magenta_toner, yellow_toner);
+    printer.calc_and_update_toners_level_percent();
 
     Ok(printer)
 }
