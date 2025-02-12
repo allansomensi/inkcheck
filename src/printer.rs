@@ -133,3 +133,42 @@ pub fn load_printer(brand: &str, model: &str) -> Result<Value, AppError> {
         .and_then(|json| json.get(model).cloned())
         .ok_or_else(|| AppError::UnsupportedPrinter(model.to_string()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{Printer, Toner};
+
+    #[test]
+    fn test_calc_and_update_toner_level_percent() {
+        let mut printer = Printer::new(
+            String::from("OKI B431"),
+            Toner {
+                level: 2800,
+                max_level: 3500,
+                level_percent: None,
+            },
+            Toner {
+                level: 1000,
+                max_level: 3000,
+                level_percent: None,
+            },
+            Toner {
+                level: 2000,
+                max_level: 3000,
+                level_percent: None,
+            },
+            Toner {
+                level: 300,
+                max_level: 3000,
+                level_percent: None,
+            },
+        );
+
+        printer.calc_and_update_toners_level_percent();
+
+        assert_eq!(printer.black_toner.level_percent, Some(80));
+        assert_eq!(printer.cyan_toner.level_percent, Some(33));
+        assert_eq!(printer.magenta_toner.level_percent, Some(66));
+        assert_eq!(printer.yellow_toner.level_percent, Some(10));
+    }
+}
