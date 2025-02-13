@@ -5,7 +5,7 @@ use crate::{
 };
 use clap::ValueEnum;
 use snmp2::{Oid, SyncSession, Value};
-use std::{fmt::Display, net::Ipv4Addr, time::Duration};
+use std::{fmt::Display, net::Ipv4Addr, path::PathBuf, time::Duration};
 
 /// Represents the different versions of the SNMP.
 #[derive(Copy, Clone, ValueEnum, Debug)]
@@ -40,6 +40,7 @@ pub struct SnmpClientParams {
     pub community: String,
     pub version: SnmpVersion,
     pub timeout: u64,
+    pub data_dir: Option<PathBuf>,
 }
 
 /// A trait for converting SNMP `Value` types into Rust types.
@@ -232,9 +233,11 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
 
     let model = &name;
 
-    let oids = match load_printer(brand, model) {
+    let data_dir = params.data_dir.clone();
+
+    let oids = match load_printer(brand, model, data_dir) {
         Ok(oids) => Ok(oids),
-        Err(e) => Err(AppError::UnsupportedPrinter(e.to_string())),
+        Err(e) => Err(e),
     }?;
 
     // Function to retrieve the OID for a specific printer supply and color.
