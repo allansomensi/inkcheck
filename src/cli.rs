@@ -4,6 +4,7 @@ use crate::{
     snmp::{SnmpClientParams, SnmpVersion},
 };
 use clap::Parser;
+use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::{net::Ipv4Addr, path::PathBuf, thread, time::Duration};
 
@@ -11,7 +12,6 @@ use std::{net::Ipv4Addr, path::PathBuf, thread, time::Duration};
 #[command(version, about)]
 pub struct Args {
     /// IP of the printer
-    #[arg()]
     ip: Ipv4Addr,
 
     /// SNMP Service Port
@@ -51,10 +51,11 @@ pub fn parse_args() -> Result<SnmpClientParams, AppError> {
     Ok(params)
 }
 
-/// Displays a progress bar for the toner level.
+/// Displays a progress bar representing the toner level.
 ///
 /// # Arguments
-/// * `level` - The toner level in percentage (0-100).
+/// * `level` - The toner level as a percentage (0-100).
+/// * `toner_color` - The color of the toner from the [TonerColor] enum.
 fn show_toner_progress(level: u8, toner_color: TonerColor) {
     let color: &str = match toner_color {
         TonerColor::Black => "white",
@@ -63,7 +64,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor) {
         TonerColor::Yellow => "yellow",
     };
 
-    let template = format!("{{prefix:8.{color}.bold}} [{{bar:50.{color}}}] {{percent:3}}%");
+    let template = format!("{{prefix:8.{color}.bold}} [{{bar:25.{color}}}] {{percent:3}}%");
 
     let pb = ProgressBar::new(100);
     pb.set_prefix(format!("{}:", toner_color));
@@ -71,11 +72,11 @@ fn show_toner_progress(level: u8, toner_color: TonerColor) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars("#-"),
+            .progress_chars("█▓▒░"),
     );
 
     for _ in 0..level {
-        thread::sleep(Duration::from_millis(3));
+        thread::sleep(Duration::from_millis(1));
         pb.inc(1);
     }
 
@@ -86,9 +87,15 @@ fn show_toner_progress(level: u8, toner_color: TonerColor) {
 pub fn show_printer_values(printer: Printer) {
     let app_version = env!("CARGO_PKG_VERSION");
 
-    println!("-=-=-=-  InkCheck {app_version} -=-=-=-\n");
+    println!(
+        "{}  {} {}  {}\n",
+        "-=-=-=-".cyan(),
+        "InkCheck".white().bold(),
+        app_version.bright_yellow(),
+        "-=-=-=-".cyan()
+    );
 
-    println!("Printer: {}\n", printer.name);
+    println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
 
     if let Some(level) = printer.black_toner.level_percent {
         show_toner_progress(level as u8, TonerColor::Black);
@@ -107,4 +114,15 @@ pub fn show_printer_values(printer: Printer) {
     }
 
     println!();
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cli::Args;
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+        Args::command().debug_assert();
+    }
 }
