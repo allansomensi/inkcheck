@@ -188,7 +188,14 @@ pub fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppEr
 where
     T: for<'a> FromSnmpValue<'a>,
 {
-    let mut session = create_snmp_session(ctx)?;
+    let mut session = match create_snmp_session(ctx) {
+        Ok(session) => session,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+
     let oid = Oid::from(oid).map_err(|_| AppError::OidConversion(format!("{:?}", oid)))?;
 
     let mut response = session
