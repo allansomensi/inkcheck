@@ -17,7 +17,7 @@ pub fn parse_oid_to_vec(oid: &str) -> Result<Vec<u64>, AppError> {
         .map(|segment| {
             segment
                 .parse::<u64>()
-                .map_err(|e| AppError::InvalidOidFormat(e.to_string()))
+                .map_err(|_| AppError::InvalidOidFormat)
         })
         .collect()
 }

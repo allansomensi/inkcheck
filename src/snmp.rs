@@ -148,22 +148,11 @@ fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppError> 
 
     match ctx.version {
         SnmpVersion::V1 => {
-            SyncSession::new_v1(agent_address, community, Some(timeout), 0).map_err(|e| {
-                if e.to_string().contains("timeout") {
-                    AppError::Timeout
-                } else {
-                    AppError::SnmpRequest(e.to_string())
-                }
-            })
+            SyncSession::new_v1(agent_address, community, Some(timeout), 0).map_err(AppError::from)
         }
-        SnmpVersion::V2c => SyncSession::new_v2c(agent_address, community, Some(timeout), 0)
-            .map_err(|e| {
-                if e.to_string().contains("timeout") {
-                    AppError::Timeout
-                } else {
-                    AppError::SnmpRequest(e.to_string())
-                }
-            }),
+        SnmpVersion::V2c => {
+            SyncSession::new_v2c(agent_address, community, Some(timeout), 0).map_err(AppError::from)
+        }
         SnmpVersion::V3 => Err(AppError::UnsupportedVersion),
     }
 }
@@ -196,7 +185,7 @@ where
         }
     };
 
-    let oid = Oid::from(oid).map_err(|_| AppError::OidConversion(format!("{:?}", oid)))?;
+    let oid = Oid::from(oid).map_err(|_| AppError::OidConversion)?;
 
     let mut response = session
         .get(&oid)
@@ -205,7 +194,7 @@ where
     if let Some((_oid, value)) = response.varbinds.next() {
         Ok(T::from_snmp_value(&value)?)
     } else {
-        Err(AppError::OidNotFound(format!("{:?}", oid)))
+        Err(AppError::OidNotFound)
     }
 }
 
@@ -265,7 +254,7 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
             .and_then(|b| b.get(key))
             .and_then(|l| l.as_str())
             .map(parse_oid_to_vec)
-            .ok_or_else(|| AppError::OidNotFound("OID not found".to_string()))?
+            .ok_or_else(|| AppError::OidNotFound)?
     };
 
     //

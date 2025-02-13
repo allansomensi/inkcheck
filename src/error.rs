@@ -3,8 +3,11 @@ pub enum AppError {
     #[error("CLI error: {0}. Ensure the correct arguments are provided.")]
     CliError(#[from] clap::Error),
 
-    #[error("Failed to convert OID: {0}. Ensure the OID format is valid and numeric.")]
-    OidConversion(String),
+    #[error("IO error: {0}.")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Failed to convert OID. Ensure the OID format is valid and numeric.")]
+    OidConversion,
 
     #[error("Type conversion failed: {0}. The provided value does not match the expected type.")]
     TypeMismatch(String),
@@ -17,16 +20,11 @@ pub enum AppError {
     )]
     SnmpRequest(String),
 
-    #[error("Connection timed out while attempting to communicate with the SNMP agent. Ensure the agent is reachable and the network is stable.")]
-    Timeout,
+    #[error("OID not found. Verify that the correct OID is being used for the target device.")]
+    OidNotFound,
 
-    #[error(
-        "OID '{0}' not found. Verify that the correct OID is being used for the target device."
-    )]
-    OidNotFound(String),
-
-    #[error("Invalid OID format: '{0}'. OID segments must be numeric and separated by dots.")]
-    InvalidOidFormat(String),
+    #[error("Invalid OID format. OID segments must be numeric and separated by dots.")]
+    InvalidOidFormat,
 
     #[error("SNMP v3 is not supported yet. Use SNMP v1 or v2c instead.")]
     UnsupportedVersion,
