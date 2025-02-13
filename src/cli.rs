@@ -1,10 +1,11 @@
 use crate::{
     error::AppError,
-    printer::Printer,
+    printer::{Printer, TonerColor},
     snmp::{SnmpClientParams, SnmpVersion},
 };
 use clap::Parser;
-use std::{net::Ipv4Addr, path::PathBuf};
+use indicatif::{ProgressBar, ProgressStyle};
+use std::{net::Ipv4Addr, path::PathBuf, thread, time::Duration};
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
@@ -50,23 +51,60 @@ pub fn parse_args() -> Result<SnmpClientParams, AppError> {
     Ok(params)
 }
 
+/// Displays a progress bar for the toner level.
+///
+/// # Arguments
+/// * `level` - The toner level in percentage (0-100).
+fn show_toner_progress(level: u8, toner_color: TonerColor) {
+    let color: &str = match toner_color {
+        TonerColor::Black => "white",
+        TonerColor::Cyan => "cyan",
+        TonerColor::Magenta => "magenta",
+        TonerColor::Yellow => "yellow",
+    };
+
+    let template = format!("{{prefix:8.{color}.bold}} [{{bar:50.{color}}}] {{percent:3}}%");
+
+    let pb = ProgressBar::new(100);
+    pb.set_prefix(format!("{}:", toner_color));
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template(&template)
+            .unwrap()
+            .progress_chars("#-"),
+    );
+
+    for _ in 0..level {
+        thread::sleep(Duration::from_millis(3));
+        pb.inc(1);
+    }
+
+    pb.abandon();
+}
+
 /// Display the formatted values.
 pub fn show_printer_values(printer: Printer) {
-    println!("Name: {}", printer.name);
+    let app_version = env!("CARGO_PKG_VERSION");
+
+    println!("-=-=-=-  InkCheck {app_version} -=-=-=-\n");
+
+    println!("Printer: {}\n", printer.name);
 
     if let Some(level) = printer.black_toner.level_percent {
-        println!("Black Toner: {level}%");
+        show_toner_progress(level as u8, TonerColor::Black);
     }
 
     if let Some(level) = printer.cyan_toner.level_percent {
-        println!("Cyan Toner: {level}%");
+        show_toner_progress(level as u8, TonerColor::Cyan);
     }
 
     if let Some(level) = printer.magenta_toner.level_percent {
-        println!("Magenta Toner: {level}%");
+        show_toner_progress(level as u8, TonerColor::Magenta);
     }
 
     if let Some(level) = printer.yellow_toner.level_percent {
-        println!("Yellow Toner: {level}%");
+        show_toner_progress(level as u8, TonerColor::Yellow);
     }
+
+    println!();
 }
