@@ -6,10 +6,22 @@ mod utils;
 
 fn main() -> Result<(), error::AppError> {
     // Get the command line parameters.
-    let params = cli::parse_args()?;
+    let params = match cli::parse_args() {
+        Ok(params) => params,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
 
     // Fetch the values and store them in a `Printer`.
-    let printer = snmp::get_printer_values(&params)?;
+    let printer = match snmp::get_printer_values(&params) {
+        Ok(printer) => printer,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
 
     // Display the formatted values.
     cli::show_printer_values(printer);

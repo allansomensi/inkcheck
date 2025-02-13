@@ -23,6 +23,12 @@ pub enum AppError {
     #[error("OID not found. Verify that the correct OID is being used for the target device.")]
     OidNotFound,
 
+    #[error("The specified directory is invalid or does not exist.")]
+    InvalidDirectory,
+
+    #[error("Failed to read the contents of the specified directory.")]
+    DirectoryReadError,
+
     #[error("Invalid OID format. OID segments must be numeric and separated by dots.")]
     InvalidOidFormat,
 

@@ -4,7 +4,7 @@ use crate::{
     snmp::{SnmpClientParams, SnmpVersion},
 };
 use clap::Parser;
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, path::PathBuf};
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
@@ -28,6 +28,10 @@ pub struct Args {
     /// Timeout in seconds
     #[arg(short, long, default_value_t = 5)]
     timeout: u64,
+
+    /// Data directory
+    #[arg(short, long)]
+    data_dir: Option<PathBuf>,
 }
 
 /// Capture and return the command line arguments.
@@ -40,6 +44,7 @@ pub fn parse_args() -> Result<SnmpClientParams, AppError> {
         community: args.community,
         version: args.snmp_version,
         timeout: args.timeout,
+        data_dir: args.data_dir,
     };
 
     Ok(params)
