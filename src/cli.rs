@@ -3,10 +3,65 @@ use crate::{
     printer::{Printer, TonerColor},
     snmp::{SnmpClientParams, SnmpVersion},
 };
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{net::Ipv4Addr, path::PathBuf, thread, time::Duration};
+use std::{fmt::Display, net::Ipv4Addr, path::PathBuf, thread, time::Duration};
+
+/// Structure that holds general parameters for the application.
+///
+/// This structure groups together the settings related to the application configuration,
+/// including CLI and SNMP settings.
+pub struct AppParams {
+    pub app: CliParams,
+    pub snmp: SnmpClientParams,
+}
+
+/// Structure that holds parameters for the command-line interface (CLI).
+///
+/// This structure defines the settings specific to the CLI, such as the theme to be used.
+pub struct CliParams {
+    pub theme: CliTheme,
+}
+
+/// Enum representing different CLI themes.
+///
+/// This enum defines the available themes that can be used in the CLI interface,
+/// affecting the visual presentation.
+#[derive(Debug, Clone, ValueEnum)]
+pub enum CliTheme {
+    Solid,
+    Blocks,
+    Circles,
+    Diamonds,
+    Shades,
+    Vintage,
+    Stars,
+    Emoji,
+    Moon,
+}
+
+impl Display for CliTheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Solid => write!(f, "solid"),
+            Self::Blocks => write!(f, "blocks"),
+            Self::Circles => write!(f, "circles"),
+            Self::Diamonds => write!(f, "diamonds"),
+            Self::Shades => write!(f, "shades"),
+            Self::Vintage => write!(f, "vintage"),
+            Self::Stars => write!(f, "stars"),
+            Self::Emoji => write!(f, "emoji"),
+            Self::Moon => write!(f, "moon"),
+        }
+    }
+}
+
+impl Default for CliTheme {
+    fn default() -> Self {
+        Self::Solid
+    }
+}
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
@@ -33,19 +88,26 @@ pub struct Args {
     /// Data directory
     #[arg(short, long)]
     data_dir: Option<PathBuf>,
+
+    /// Cli theme
+    #[arg(long, default_value_t = CliTheme::Solid)]
+    theme: CliTheme,
 }
 
 /// Capture and return the command line arguments.
-pub fn parse_args() -> Result<SnmpClientParams, AppError> {
+pub fn parse_args() -> Result<AppParams, AppError> {
     let args = Args::parse();
 
-    let params = SnmpClientParams {
-        ip: args.ip,
-        port: args.port,
-        community: args.community,
-        version: args.snmp_version,
-        timeout: args.timeout,
-        data_dir: args.data_dir,
+    let params = AppParams {
+        app: CliParams { theme: args.theme },
+        snmp: SnmpClientParams {
+            ip: args.ip,
+            port: args.port,
+            community: args.community,
+            version: args.snmp_version,
+            timeout: args.timeout,
+            data_dir: args.data_dir,
+        },
     };
 
     Ok(params)
@@ -56,7 +118,20 @@ pub fn parse_args() -> Result<SnmpClientParams, AppError> {
 /// # Arguments
 /// * `level` - The toner level as a percentage (0-100).
 /// * `toner_color` - The color of the toner from the [TonerColor] enum.
-fn show_toner_progress(level: u8, toner_color: TonerColor) {
+/// * `theme` - The [CliTheme] selected by the user.
+fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
+    let theme_chars = match theme {
+        CliTheme::Solid => "█ ",
+        CliTheme::Blocks => "█▓▒░",
+        CliTheme::Circles => "●○",
+        CliTheme::Diamonds => "◆◇",
+        CliTheme::Shades => "▉▇▆▅▄▃▂▁",
+        CliTheme::Vintage => "#-",
+        CliTheme::Stars => "★☆",
+        CliTheme::Emoji => "😊🙂😐🙁😞",
+        CliTheme::Moon => "🌕🌖🌗🌘🌑",
+    };
+
     let color: &str = match toner_color {
         TonerColor::Black => "white",
         TonerColor::Cyan => "cyan",
@@ -72,7 +147,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars("█▓▒░"),
+            .progress_chars(theme_chars),
     );
 
     for _ in 0..level {
@@ -84,7 +159,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor) {
 }
 
 /// Display the formatted values.
-pub fn show_printer_values(printer: Printer) {
+pub fn show_printer_values(printer: Printer, theme: CliTheme) {
     let app_version = env!("CARGO_PKG_VERSION");
 
     println!(
@@ -98,19 +173,19 @@ pub fn show_printer_values(printer: Printer) {
     println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
 
     if let Some(level) = printer.black_toner.level_percent {
-        show_toner_progress(level as u8, TonerColor::Black);
+        show_toner_progress(level as u8, TonerColor::Black, &theme);
     }
 
     if let Some(level) = printer.cyan_toner.level_percent {
-        show_toner_progress(level as u8, TonerColor::Cyan);
+        show_toner_progress(level as u8, TonerColor::Cyan, &theme);
     }
 
     if let Some(level) = printer.magenta_toner.level_percent {
-        show_toner_progress(level as u8, TonerColor::Magenta);
+        show_toner_progress(level as u8, TonerColor::Magenta, &theme);
     }
 
     if let Some(level) = printer.yellow_toner.level_percent {
-        show_toner_progress(level as u8, TonerColor::Yellow);
+        show_toner_progress(level as u8, TonerColor::Yellow, &theme);
     }
 
     println!();

@@ -15,7 +15,7 @@ fn main() -> Result<(), error::AppError> {
     };
 
     // Fetch the values and store them in a `Printer`.
-    let printer = match snmp::get_printer_values(&params) {
+    let printer = match snmp::get_printer_values(&params.snmp) {
         Ok(printer) => printer,
         Err(e) => {
             eprintln!("{e}");
@@ -24,7 +24,7 @@ fn main() -> Result<(), error::AppError> {
     };
 
     // Display the formatted values.
-    cli::show_printer_values(printer);
+    cli::show_printer_values(printer, params.app.theme);
 
     Ok(())
 }
