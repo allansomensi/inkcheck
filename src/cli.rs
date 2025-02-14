@@ -74,7 +74,7 @@ pub struct Args {
     port: u16,
 
     /// SNMP Version
-    #[arg(short, long, default_value_t = SnmpVersion::V2c)]
+    #[arg(short, long, default_value_t = SnmpVersion::V1)]
     snmp_version: SnmpVersion,
 
     /// SNMP Community
@@ -176,15 +176,15 @@ pub fn show_printer_values(printer: Printer, theme: CliTheme) {
         show_toner_progress(level as u8, TonerColor::Black, &theme);
     }
 
-    if let Some(level) = printer.cyan_toner.level_percent {
+    if let Some(level) = printer.cyan_toner.as_ref().and_then(|t| t.level_percent) {
         show_toner_progress(level as u8, TonerColor::Cyan, &theme);
     }
 
-    if let Some(level) = printer.magenta_toner.level_percent {
+    if let Some(level) = printer.magenta_toner.as_ref().and_then(|t| t.level_percent) {
         show_toner_progress(level as u8, TonerColor::Magenta, &theme);
     }
 
-    if let Some(level) = printer.yellow_toner.level_percent {
+    if let Some(level) = printer.yellow_toner.as_ref().and_then(|t| t.level_percent) {
         show_toner_progress(level as u8, TonerColor::Yellow, &theme);
     }
 
