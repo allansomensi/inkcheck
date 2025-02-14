@@ -56,18 +56,18 @@ impl Display for TonerColor {
 pub struct Printer {
     pub name: String,
     pub black_toner: Toner,
-    pub cyan_toner: Toner,
-    pub magenta_toner: Toner,
-    pub yellow_toner: Toner,
+    pub cyan_toner: Option<Toner>,
+    pub magenta_toner: Option<Toner>,
+    pub yellow_toner: Option<Toner>,
 }
 
 impl Printer {
     pub fn new(
         name: String,
         black_toner: Toner,
-        cyan_toner: Toner,
-        magenta_toner: Toner,
-        yellow_toner: Toner,
+        cyan_toner: Option<Toner>,
+        magenta_toner: Option<Toner>,
+        yellow_toner: Option<Toner>,
     ) -> Self {
         Self {
             name,
@@ -102,12 +102,21 @@ impl Printer {
 
         self.black_toner.level_percent =
             calculate_level_percent(self.black_toner.level, self.black_toner.max_level);
-        self.cyan_toner.level_percent =
-            calculate_level_percent(self.cyan_toner.level, self.cyan_toner.max_level);
-        self.magenta_toner.level_percent =
-            calculate_level_percent(self.magenta_toner.level, self.magenta_toner.max_level);
-        self.yellow_toner.level_percent =
-            calculate_level_percent(self.yellow_toner.level, self.yellow_toner.max_level);
+
+        if let Some(cyan_toner) = &mut self.cyan_toner {
+            cyan_toner.level_percent =
+                calculate_level_percent(cyan_toner.level, cyan_toner.max_level);
+        }
+
+        if let Some(magenta_toner) = &mut self.magenta_toner {
+            magenta_toner.level_percent =
+                calculate_level_percent(magenta_toner.level, magenta_toner.max_level);
+        }
+
+        if let Some(yellow_toner) = &mut self.yellow_toner {
+            yellow_toner.level_percent =
+                calculate_level_percent(yellow_toner.level, yellow_toner.max_level);
+        }
     }
 }
 
@@ -184,28 +193,28 @@ mod tests {
                 max_level: 3500,
                 level_percent: None,
             },
-            Toner {
+            Some(Toner {
                 level: 1000,
                 max_level: 3000,
                 level_percent: None,
-            },
-            Toner {
+            }),
+            Some(Toner {
                 level: 2000,
                 max_level: 3000,
                 level_percent: None,
-            },
-            Toner {
+            }),
+            Some(Toner {
                 level: 300,
                 max_level: 3000,
                 level_percent: None,
-            },
+            }),
         );
 
         printer.calc_and_update_toners_level_percent();
 
         assert_eq!(printer.black_toner.level_percent, Some(80));
-        assert_eq!(printer.cyan_toner.level_percent, Some(33));
-        assert_eq!(printer.magenta_toner.level_percent, Some(66));
-        assert_eq!(printer.yellow_toner.level_percent, Some(10));
+        assert_eq!(printer.cyan_toner.unwrap().level_percent, Some(33));
+        assert_eq!(printer.magenta_toner.unwrap().level_percent, Some(66));
+        assert_eq!(printer.yellow_toner.unwrap().level_percent, Some(10));
     }
 }

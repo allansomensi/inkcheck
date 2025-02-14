@@ -13,6 +13,10 @@ use crate::error::AppError;
 ///
 /// - A `Result<Vec<u64>, SnmpError>` containing the vector of `u64` values if successful, or an error if parsing fails.
 pub fn parse_oid_to_vec(oid: &str) -> Result<Vec<u64>, AppError> {
+    if oid.is_empty() {
+        return Ok(vec![]);
+    }
+
     oid.split('.')
         .map(|segment| {
             segment

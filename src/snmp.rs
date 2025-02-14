@@ -291,30 +291,44 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         level_percent: None,
     };
 
-    let cyan_toner = Toner {
-        level: get_snmp_value(&cyan_toner_level_oid, params)?,
-        max_level: get_snmp_value(&cyan_toner_max_level_oid, params)?,
-        level_percent: None,
+    let cyan_toner = if !cyan_toner_level_oid.is_empty() && !cyan_toner_max_level_oid.is_empty() {
+        Some(Toner {
+            level: get_snmp_value(&cyan_toner_level_oid, params)?,
+            max_level: get_snmp_value(&cyan_toner_max_level_oid, params)?,
+            level_percent: None,
+        })
+    } else {
+        None
     };
 
-    let magenta_toner = Toner {
-        level: get_snmp_value(&magenta_toner_level_oid, params)?,
-        max_level: get_snmp_value(&magenta_toner_max_level_oid, params)?,
-        level_percent: None,
-    };
+    let magenta_toner =
+        if !magenta_toner_level_oid.is_empty() && !magenta_toner_max_level_oid.is_empty() {
+            Some(Toner {
+                level: get_snmp_value(&magenta_toner_level_oid, params)?,
+                max_level: get_snmp_value(&magenta_toner_max_level_oid, params)?,
+                level_percent: None,
+            })
+        } else {
+            None
+        };
 
-    let yellow_toner = Toner {
-        level: get_snmp_value(&yellow_toner_level_oid, params)?,
-        max_level: get_snmp_value(&yellow_toner_max_level_oid, params)?,
-        level_percent: None,
-    };
+    let yellow_toner =
+        if !yellow_toner_level_oid.is_empty() && !yellow_toner_max_level_oid.is_empty() {
+            Some(Toner {
+                level: get_snmp_value(&yellow_toner_level_oid, params)?,
+                max_level: get_snmp_value(&yellow_toner_max_level_oid, params)?,
+                level_percent: None,
+            })
+        } else {
+            None
+        };
 
     let mut printer = Printer::new(
         name.clone(),
-        black_toner.clone(),
-        cyan_toner.clone(),
-        magenta_toner.clone(),
-        yellow_toner.clone(),
+        black_toner,
+        cyan_toner,
+        magenta_toner,
+        yellow_toner,
     );
 
     printer.calc_and_update_toners_level_percent();
