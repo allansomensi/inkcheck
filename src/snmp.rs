@@ -1,6 +1,7 @@
 use crate::{
     error::AppError,
     printer::{load_printer, Printer, PrinterSupply, Toner, TonerColor},
+    special,
     utils::parse_oid_to_vec,
 };
 use clap::ValueEnum;
@@ -56,6 +57,7 @@ pub struct SnmpClientParams {
 /// - `i64`: Converts from an SNMP `Integer` value.
 /// - `String`: Converts from an SNMP `OctetString` value.
 /// - `Vec<u64>`: Converts from an SNMP `ObjectIdentifier` value, splitting the OID string into individual components.
+/// - `Vec<u8>`: Converts from an SNMP `OctetString` bytes.
 /// - `u32`: Converts from an SNMP `Unsigned32`, `Counter32`, or `Timeticks` value.
 /// - `u64`: Converts from an SNMP `Counter64` value.
 /// - `bool`: Converts from an SNMP `Boolean` value.
@@ -106,6 +108,18 @@ impl<'a> FromSnmpValue<'a> for Vec<u64> {
     }
 }
 
+impl<'a> FromSnmpValue<'a> for Vec<u8> {
+    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
+        if let Value::OctetString(v) = value {
+            Ok(v.to_vec())
+        } else {
+            Err(AppError::TypeMismatch(
+                "Expected OctetString, but received a different type".to_string(),
+            ))
+        }
+    }
+}
+
 impl<'a> FromSnmpValue<'a> for u32 {
     fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
         match value {
@@ -142,7 +156,7 @@ impl<'a> FromSnmpValue<'a> for bool {
     }
 }
 
-fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppError> {
+pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppError> {
     let agent_address = format!("{}:{}", ctx.ip, ctx.port);
     let community = ctx.community.as_bytes();
     let timeout = Duration::from_secs(ctx.timeout);
@@ -232,6 +246,11 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         .expect("Error fetching printer brand");
 
     let model = &name;
+
+    // Special handling for Brother printers
+    if model.to_lowercase().contains("brother") {
+        return special::brother(params, model.clone());
+    }
 
     let data_dir = params.data_dir.clone();
 

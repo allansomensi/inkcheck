@@ -2,6 +2,7 @@ mod cli;
 mod error;
 mod printer;
 mod snmp;
+mod special;
 mod utils;
 
 fn main() -> Result<(), error::AppError> {
