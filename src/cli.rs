@@ -115,7 +115,7 @@ pub fn parse_args() -> Result<AppParams, AppError> {
 
 /// Displays a progress bar representing the toner level.
 ///
-/// # Arguments
+/// ## Arguments
 /// * `level` - The toner level as a percentage (0-100).
 /// * `toner_color` - The color of the toner from the [TonerColor] enum.
 /// * `theme` - The [CliTheme] selected by the user.

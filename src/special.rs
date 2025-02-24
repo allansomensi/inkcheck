@@ -35,10 +35,10 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
     None
 }
 
-/// This function retrieves toner levels for a Brother printer and returns a Printer object.
+/// This function retrieves toner levels for a Brother printer and returns a [Printer] object.
 ///
 /// It attempts to read the toner levels for black, cyan, magenta, and yellow toners. If any toner
-/// is not found, it will be returned as `None` in the `Printer` struct.
+/// is not found, it will be returned as [None] in the [Printer] struct.
 /// If the black toner is not found, an error is returned.
 pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, AppError> {
     let br_info_maintenance_oid = &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0];
