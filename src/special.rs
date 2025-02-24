@@ -28,7 +28,7 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
         if start + 4 <= bytes.len() {
             let result_bytes: [u8; 4] = bytes[start..start + 4].try_into().ok()?;
             let value = u32::from_be_bytes(result_bytes);
-            dbg!(Some((value as f32 / 100.0) as i64));
+
             return Some((value as f32 / 100.0) as i64);
         }
     }
