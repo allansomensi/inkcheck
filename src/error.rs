@@ -1,3 +1,4 @@
+/// Enum representing the various errors that can occur in the application.
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
     #[error("CLI error: {0}. Ensure the correct arguments are provided.")]

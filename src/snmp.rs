@@ -52,15 +52,15 @@ pub struct SnmpClientParams {
 /// The `from_snmp_value` method converts the SNMP `Value` to the implementing type. If the conversion is not possible,
 /// it returns an error message.
 ///
-/// # Implementations
-/// The following types implement `FromSnmpValue`:
-/// - `i64`: Converts from an SNMP `Integer` value.
-/// - `String`: Converts from an SNMP `OctetString` value.
-/// - `Vec<u64>`: Converts from an SNMP `ObjectIdentifier` value, splitting the OID string into individual components.
-/// - `Vec<u8>`: Converts from an SNMP `OctetString` bytes.
-/// - `u32`: Converts from an SNMP `Unsigned32`, `Counter32`, or `Timeticks` value.
-/// - `u64`: Converts from an SNMP `Counter64` value.
-/// - `bool`: Converts from an SNMP `Boolean` value.
+/// ## Implementations
+/// The following types implement [FromSnmpValue]:
+/// - [i64]: Converts from an SNMP [Value::Integer] value.
+/// - [String]: Converts from an SNMP [Value::OctetString] value.
+/// - [Vec<u64>]: Converts from an SNMP [Value::ObjectIdentifier] value, splitting the OID string into individual components.
+/// - [Vec<u8>]: Converts from an SNMP [Value::OctetString] bytes.
+/// - [u32]: Converts from an SNMP [Value::Unsigned32], [Value::Counter32], or [Value::Timeticks] value.
+/// - [u64]: Converts from an SNMP [Value::Counter64] value.
+/// - [bool]: Converts from an SNMP [Value::Boolean] value.
 pub trait FromSnmpValue<'a>: Sized {
     fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError>;
 }
@@ -175,18 +175,18 @@ pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppErr
 /// Retrieves an SNMP value for a given OID and converts it to the specified type.
 ///
 /// This function performs an SNMP `GET` operation for a specified OID and converts the resulting SNMP value
-/// into the desired Rust type using the `FromSnmpValue` trait. It creates an SNMP session using the provided
-/// `SnmpClientParams` and returns the value as the requested type.
+/// into the desired Rust type using the [FromSnmpValue] trait. It creates an SNMP session using the provided
+/// [SnmpClientParams] and returns the value as the requested type.
 ///
-/// # Arguments:
+/// ## Arguments:
 /// - `oid`: A slice of `u64` representing the OID to retrieve from the SNMP device.
-/// - `ctx`: A reference to `SnmpClientParams` containing the SNMP client parameters.
+/// - `ctx`: A reference to [SnmpClientParams] containing the SNMP client parameters.
 ///
-/// # Returns:
+/// ## Returns:
 /// - `Result<T, String>`: Returns the SNMP value converted to type `T` if successful, or an error message if the operation fails.
 ///
-/// # Type Constraints:
-/// - `T`: The target type, which must implement the `FromSnmpValue` trait. This allows the conversion of the SNMP value
+/// ## Type Constraints:
+/// - `T`: The target type, which must implement the [FromSnmpValue] trait. This allows the conversion of the SNMP value
 ///        into any type that supports this trait.
 pub fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
 where
@@ -226,16 +226,16 @@ pub fn get_printer_name(ctx: &SnmpClientParams) -> Result<String, AppError> {
 /// Retrieves and computes the toner levels and other printer details via SNMP.
 ///
 /// This function fetches printer information, including toner levels and other parameters, using SNMP. It queries
-/// specific OIDs for each toner color (black, cyan, magenta, and yellow) and returns a `Printer` struct populated
+/// specific OIDs for each toner color (black, cyan, magenta, and yellow) and returns a [Printer] struct populated
 /// with the printer's name, brand, model, toner levels, and toner percentages.
 ///
 /// The function assumes the presence of a JSON configuration file with printer-specific OID mappings for toners and other values.
 /// If the configuration for the printer model is not found, an error is returned.
 ///
-/// # Arguments:
-/// - `params`: A reference to `SnmpClientParams` containing the SNMP client parameters.
+/// ## Arguments:
+/// - `params`: A reference to [SnmpClientParams] containing the SNMP client parameters.
 ///
-/// # Returns:
+/// ## Returns:
 /// - A `Printer` struct containing the printer's details such as name, brand, model, toner levels, and toner percentages.
 pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError> {
     let name = get_printer_name(params)?;
@@ -263,12 +263,12 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     // It constructs the key based on the supply type and color, and then looks for the
     // specified OID key within the OID mappings.
     //
-    // # Parameters:
+    // ## Parameters:
     // - `supply`: The type of supply to search for.
     // - `color`: The color of the toner.
     // - `key`: The specific key to retrieve.
     //
-    // # Returns:
+    // ## Returns:
     // A Result containing the parsed OID as a `Vec<u64>` if found, or an `OidNotFound` error if not found.
     let get_supply_oid = |supply: PrinterSupply, color: TonerColor, key: &str| {
         oids.get(supply.to_string().to_lowercase())

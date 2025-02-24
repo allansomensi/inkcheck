@@ -3,15 +3,15 @@ use crate::error::AppError;
 /// Parses a string representing an OID into a vector of `u64` values.
 ///
 /// This function takes an OID string.splits it by the dot (`.`) separator, and converts each segment into a `u64`
-/// value. If any segment cannot be parsed into a `u64`, it returns a `SnmpError::InvalidOidFormat` error.
+/// value. If any segment cannot be parsed into a `u64`, it returns a [AppError::InvalidOidFormat] error.
 ///
-/// # Arguments:
+/// ## Arguments:
 ///
-/// - `oid`: The OID string to be parsed (e.g., "1.3.6.1.2.1.25").
+/// - `oid`: The OID string to be parsed.
 ///
-/// # Returns:
+/// ## Returns:
 ///
-/// - A `Result<Vec<u64>, SnmpError>` containing the vector of `u64` values if successful, or an error if parsing fails.
+/// - A `Result<Vec<u64>, AppError>` containing the vector of `u64` values if successful, or an error if parsing fails.
 pub fn parse_oid_to_vec(oid: &str) -> Result<Vec<u64>, AppError> {
     if oid.is_empty() {
         return Ok(vec![]);
