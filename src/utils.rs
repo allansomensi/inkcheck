@@ -56,7 +56,7 @@ mod tests {
         ];
 
         for (oid, expected_oid_vec) in oids.iter() {
-            assert_eq!(parse_oid_to_vec(*oid).unwrap(), *expected_oid_vec);
+            assert_eq!(parse_oid_to_vec(oid).unwrap(), *expected_oid_vec);
         }
     }
 }
