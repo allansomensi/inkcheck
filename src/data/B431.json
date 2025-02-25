@@ -35,6 +35,14 @@
                 "level": "",
                 "max_level": ""
             }
+        },
+        "fuser": {
+            "level": "",
+            "max_level": ""
+        },
+        "reservoir": {
+            "level": "",
+            "max_level": ""
         }
     }
 }
