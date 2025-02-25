@@ -118,13 +118,7 @@ pub fn parse_args() -> Result<AppParams, AppError> {
     Ok(params)
 }
 
-/// Displays a progress bar representing the toner level.
-///
-/// ## Arguments
-/// * `level` - The toner level as a percentage (0-100).
-/// * `toner_color` - The color of the toner from the [TonerColor] enum.
-/// * `theme` - The [CliTheme] selected by the user.
-fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
+fn theme_chars(theme: &CliTheme) -> String {
     let theme_chars = match theme {
         CliTheme::Solid => "█ ",
         CliTheme::Blocks => "█▓▒░",
@@ -137,6 +131,18 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         CliTheme::Moon => "🌕🌖🌗🌘🌑",
     };
 
+    theme_chars.to_string()
+}
+
+/// Displays a progress bar representing the toner level.
+///
+/// ## Arguments
+/// * `level` - The toner level as a percentage (0-100).
+/// * `toner_color` - The color of the toner from the [TonerColor] enum.
+/// * `theme` - The [CliTheme] selected by the user.
+fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
+    let theme_chars = theme_chars(theme);
+
     let color: &str = match toner_color {
         TonerColor::Black => "white",
         TonerColor::Cyan => "cyan",
@@ -144,7 +150,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         TonerColor::Yellow => "yellow",
     };
 
-    let template = format!("{{prefix:8.{color}.bold}} [{{bar:25.{color}}}] {{percent:3}}%");
+    let template = format!("{{prefix:9.{color}.bold}} [{{bar:25.{color}}}] {{percent:3}}%");
 
     let pb = ProgressBar::new(100);
     pb.set_prefix(format!("{}:", toner_color));
@@ -152,7 +158,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars(theme_chars),
+            .progress_chars(theme_chars.as_str()),
     );
 
     for _ in 0..level {
@@ -170,17 +176,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
 /// * `toner_color` - The color of the drum from the [TonerColor] enum.
 /// * `theme` - The [CliTheme] selected by the user.
 fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
-    let theme_chars = match theme {
-        CliTheme::Solid => "█ ",
-        CliTheme::Blocks => "█▓▒░",
-        CliTheme::Circles => "●○",
-        CliTheme::Diamonds => "◆◇",
-        CliTheme::Shades => "▉▇▆▅▄▃▂▁",
-        CliTheme::Vintage => "#-",
-        CliTheme::Stars => "★☆",
-        CliTheme::Emoji => "😊🙂😐🙁😞",
-        CliTheme::Moon => "🌕🌖🌗🌘🌑",
-    };
+    let theme_chars = theme_chars(theme);
 
     let color: &str = match toner_color {
         TonerColor::Black => "white",
@@ -189,7 +185,7 @@ fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         TonerColor::Yellow => "yellow",
     };
 
-    let template = format!("{{prefix:8.{color}.bold}} [{{bar:25.{color}}}] {{percent:3}}%");
+    let template = format!("{{prefix:9.{color}.bold}} [{{bar:25.{color}}}] {{percent:3}}%");
 
     let pb = ProgressBar::new(100);
     pb.set_prefix(format!("{}:", toner_color));
@@ -197,7 +193,61 @@ fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars(theme_chars),
+            .progress_chars(theme_chars.as_str()),
+    );
+
+    for _ in 0..level {
+        thread::sleep(Duration::from_millis(1));
+        pb.inc(1);
+    }
+
+    pb.abandon();
+}
+
+/// Displays a progress bar representing the fuser level.
+///
+/// ## Arguments
+/// * `level` - The fuser level as a percentage (0-100).
+/// * `theme` - The [CliTheme] selected by the user.
+fn show_fuser_progress(level: u8, theme: &CliTheme) {
+    let theme_chars = theme_chars(theme);
+
+    let template = "{prefix:9.gray.bold} [{bar:25.white}] {percent:3}%";
+
+    let pb = ProgressBar::new(100);
+    pb.set_prefix("Fuser");
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template(template)
+            .unwrap()
+            .progress_chars(theme_chars.as_str()),
+    );
+
+    for _ in 0..level {
+        thread::sleep(Duration::from_millis(1));
+        pb.inc(1);
+    }
+
+    pb.abandon();
+}
+
+/// Displays a progress bar representing the waste toner container level.
+///
+/// ## Arguments
+/// * `level` - The waste toner container level as a percentage (0-100).
+/// * `theme` - The [CliTheme] selected by the user.
+fn show_reservoir_progress(level: u8, theme: &CliTheme) {
+    let theme_chars = theme_chars(theme);
+
+    let template = "{prefix:9.gray.bold} [{bar:25.white}] {percent:3}%";
+
+    let pb = ProgressBar::new(100);
+    pb.set_prefix("Reservoir");
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template(template)
+            .unwrap()
+            .progress_chars(theme_chars.as_str()),
     );
 
     for _ in 0..level {
@@ -209,7 +259,7 @@ fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
 }
 
 /// Display the formatted values.
-pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliTheme) {
+pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: &CliTheme) {
     let app_version = env!("CARGO_PKG_VERSION");
 
     println!(
@@ -225,7 +275,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
     println!("--> {}\n", "Toner:".bright_white().bold());
 
     if let Some(level) = printer.toners.black_toner.level_percent {
-        show_toner_progress(level as u8, TonerColor::Black, &theme);
+        show_toner_progress(level as u8, TonerColor::Black, theme);
     }
 
     if let Some(level) = printer
@@ -234,7 +284,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
         .as_ref()
         .and_then(|t| t.level_percent)
     {
-        show_toner_progress(level as u8, TonerColor::Cyan, &theme);
+        show_toner_progress(level as u8, TonerColor::Cyan, theme);
     }
 
     if let Some(level) = printer
@@ -243,7 +293,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
         .as_ref()
         .and_then(|t| t.level_percent)
     {
-        show_toner_progress(level as u8, TonerColor::Magenta, &theme);
+        show_toner_progress(level as u8, TonerColor::Magenta, theme);
     }
 
     if let Some(level) = printer
@@ -252,7 +302,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
         .as_ref()
         .and_then(|t| t.level_percent)
     {
-        show_toner_progress(level as u8, TonerColor::Yellow, &theme);
+        show_toner_progress(level as u8, TonerColor::Yellow, theme);
     }
 
     if extra_supplies {
@@ -263,7 +313,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
             .and_then(|t| t.level_percent)
         {
             println!("\n\n--> {}\n", "Drum:".bright_white().bold());
-            show_drum_progress(level as u8, TonerColor::Black, &theme);
+            show_drum_progress(level as u8, TonerColor::Black, theme);
         }
 
         if let Some(level) = printer
@@ -272,7 +322,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
             .as_ref()
             .and_then(|t| t.level_percent)
         {
-            show_drum_progress(level as u8, TonerColor::Cyan, &theme);
+            show_drum_progress(level as u8, TonerColor::Cyan, theme);
         }
 
         if let Some(level) = printer
@@ -281,7 +331,7 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
             .as_ref()
             .and_then(|t| t.level_percent)
         {
-            show_drum_progress(level as u8, TonerColor::Magenta, &theme);
+            show_drum_progress(level as u8, TonerColor::Magenta, theme);
         }
 
         if let Some(level) = printer
@@ -290,7 +340,16 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: CliThe
             .as_ref()
             .and_then(|t| t.level_percent)
         {
-            show_drum_progress(level as u8, TonerColor::Yellow, &theme);
+            show_drum_progress(level as u8, TonerColor::Yellow, theme);
+        }
+
+        if let Some(level) = printer.fuser.as_ref().and_then(|t| t.level_percent) {
+            println!("\n\n--> {}\n", "Other:".bright_white().bold());
+            show_fuser_progress(level as u8, theme);
+        }
+
+        if let Some(level) = printer.reservoir.as_ref().and_then(|t| t.level_percent) {
+            show_reservoir_progress(level as u8, theme);
         }
     }
 
