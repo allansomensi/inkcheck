@@ -1,6 +1,9 @@
 use crate::{
     error::AppError,
-    printer::{load_printer, Drum, Drums, Printer, PrinterSupply, Toner, TonerColor, Toners},
+    printer::{
+        load_printer, Drum, Drums, Fuser, Printer, PrinterSupply, Reservoir, Toner, TonerColor,
+        Toners,
+    },
     special,
     utils::parse_oid_to_vec,
 };
@@ -271,13 +274,21 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     //
     // ## Returns:
     // A Result containing the parsed OID as a `Vec<u64>` if found, or an `OidNotFound` error if not found.
-    let get_supply_oid = |supply: PrinterSupply, color: TonerColor, key: &str| {
-        oids.get(supply.to_string().to_lowercase())
-            .and_then(|t| t.get(color.to_string().to_lowercase()))
-            .and_then(|b| b.get(key))
-            .and_then(|l| l.as_str())
-            .map(parse_oid_to_vec)
-            .ok_or_else(|| AppError::OidNotFound)?
+    let get_supply_oid = |supply: PrinterSupply, color: Option<TonerColor>, key: &str| {
+        if color.is_some() {
+            oids.get(supply.to_string().to_lowercase())
+                .and_then(|t| t.get(color.unwrap().to_string().to_lowercase()))
+                .and_then(|b| b.get(key))
+                .and_then(|l| l.as_str())
+                .map(parse_oid_to_vec)
+                .ok_or_else(|| AppError::OidNotFound)?
+        } else {
+            oids.get(supply.to_string().to_lowercase())
+                .and_then(|b| b.get(key))
+                .and_then(|l| l.as_str())
+                .map(parse_oid_to_vec)
+                .ok_or_else(|| AppError::OidNotFound)?
+        }
     };
 
     //
@@ -285,22 +296,25 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     //
 
     // Toners
-    let black_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Black, "level")?;
+    let black_toner_level_oid =
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "level")?;
     let black_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, TonerColor::Black, "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "max_level")?;
 
-    let cyan_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Cyan, "level")?;
+    let cyan_toner_level_oid =
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "level")?;
     let cyan_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, TonerColor::Cyan, "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "max_level")?;
 
     let magenta_toner_level_oid =
-        get_supply_oid(PrinterSupply::Toner, TonerColor::Magenta, "level")?;
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "level")?;
     let magenta_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, TonerColor::Magenta, "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "max_level")?;
 
-    let yellow_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Yellow, "level")?;
+    let yellow_toner_level_oid =
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "level")?;
     let yellow_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, TonerColor::Yellow, "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "max_level")?;
 
     // Drums
     let mut black_drum_level_oid: Vec<u64> = Vec::new();
@@ -315,22 +329,37 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     let mut yellow_drum_level_oid: Vec<u64> = Vec::new();
     let mut yellow_drum_max_level_oid: Vec<u64> = Vec::new();
 
+    let mut fuser_level_oid: Vec<u64> = Vec::new();
+    let mut fuser_max_level_oid: Vec<u64> = Vec::new();
+
+    let mut reservoir_level_oid: Vec<u64> = Vec::new();
+    let mut reservoir_max_level_oid: Vec<u64> = Vec::new();
+
     if params.extra_supplies {
-        black_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Black, "level")?;
+        black_drum_level_oid =
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Black), "level")?;
         black_drum_max_level_oid =
-            get_supply_oid(PrinterSupply::Drum, TonerColor::Black, "max_level")?;
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Black), "max_level")?;
 
-        cyan_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Cyan, "level")?;
+        cyan_drum_level_oid = get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Cyan), "level")?;
         cyan_drum_max_level_oid =
-            get_supply_oid(PrinterSupply::Drum, TonerColor::Cyan, "max_level")?;
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Cyan), "max_level")?;
 
-        magenta_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Magenta, "level")?;
+        magenta_drum_level_oid =
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Magenta), "level")?;
         magenta_drum_max_level_oid =
-            get_supply_oid(PrinterSupply::Drum, TonerColor::Magenta, "max_level")?;
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Magenta), "max_level")?;
 
-        yellow_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Yellow, "level")?;
+        yellow_drum_level_oid =
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Yellow), "level")?;
         yellow_drum_max_level_oid =
-            get_supply_oid(PrinterSupply::Drum, TonerColor::Yellow, "max_level")?;
+            get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Yellow), "max_level")?;
+
+        fuser_level_oid = get_supply_oid(PrinterSupply::Fuser, None, "level")?;
+        fuser_max_level_oid = get_supply_oid(PrinterSupply::Fuser, None, "max_level")?;
+
+        reservoir_level_oid = get_supply_oid(PrinterSupply::Reservoir, None, "level")?;
+        reservoir_max_level_oid = get_supply_oid(PrinterSupply::Reservoir, None, "max_level")?;
     }
 
     //
@@ -417,6 +446,26 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         None
     };
 
+    let fuser = if !fuser_level_oid.is_empty() && !fuser_max_level_oid.is_empty() {
+        Some(Fuser {
+            level: get_snmp_value(&fuser_level_oid, params)?,
+            max_level: get_snmp_value(&fuser_max_level_oid, params)?,
+            level_percent: None,
+        })
+    } else {
+        None
+    };
+
+    let reservoir = if !reservoir_level_oid.is_empty() && !reservoir_max_level_oid.is_empty() {
+        Some(Reservoir {
+            level: get_snmp_value(&reservoir_level_oid, params)?,
+            max_level: get_snmp_value(&reservoir_max_level_oid, params)?,
+            level_percent: None,
+        })
+    } else {
+        None
+    };
+
     let toners = Toners {
         black_toner,
         cyan_toner,
@@ -431,10 +480,12 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         yellow_drum,
     };
 
-    let mut printer = Printer::new(name.clone(), toners, drums);
+    let mut printer = Printer::new(name.clone(), toners, drums, fuser, reservoir);
 
     printer.calc_and_update_toners_level_percent();
     printer.calc_and_update_drums_level_percent();
+    printer.calc_and_update_fuser_level_percent();
+    printer.calc_and_update_reservoir_level_percent();
 
     Ok(printer)
 }
