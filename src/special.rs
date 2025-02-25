@@ -1,6 +1,6 @@
 use crate::{
     error::AppError,
-    printer::{Printer, Toner},
+    printer::{Drum, Drums, Printer, Toner, Toners},
     snmp::{get_snmp_value, SnmpClientParams},
 };
 
@@ -8,6 +8,11 @@ const BLACK_TONER_CODE: u8 = 0x6F;
 const CYAN_TONER_CODE: u8 = 0x70;
 const MAGENTA_TONER_CODE: u8 = 0x71;
 const YELLOW_TONER_CODE: u8 = 0x72;
+
+const BLACK_DRUM_CODE: u8 = 0x41;
+const CYAN_DRUM_CODE: u8 = 0x79;
+const MAGENTA_DRUM_CODE: u8 = 0x7a;
+const YELLOW_DRUM_CODE: u8 = 0x7b;
 
 /// The function scans for the exact sequence `[toner_code, 0x01, 0x04]`.
 /// If the sequence is found, the next **4 bytes** are extracted as a big-endian `u32` value,
@@ -52,6 +57,11 @@ pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, 
     let magenta_toner_percent = find_value_in_brother_bytes(&bytes, MAGENTA_TONER_CODE);
     let yellow_toner_percent = find_value_in_brother_bytes(&bytes, YELLOW_TONER_CODE);
 
+    let black_drum_percent = find_value_in_brother_bytes(&bytes, BLACK_DRUM_CODE);
+    let cyan_drum_percent = find_value_in_brother_bytes(&bytes, CYAN_DRUM_CODE);
+    let magenta_drum_percent = find_value_in_brother_bytes(&bytes, MAGENTA_DRUM_CODE);
+    let yellow_drum_percent = find_value_in_brother_bytes(&bytes, YELLOW_DRUM_CODE);
+
     let black_toner = Toner {
         level: 0,
         max_level: 0,
@@ -76,13 +86,45 @@ pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, 
         level_percent: Some(percent),
     });
 
-    Ok(Printer::new(
-        printer_name,
+    let black_drum = black_drum_percent.map(|percent| Drum {
+        level: 0,
+        max_level: 0,
+        level_percent: Some(percent),
+    });
+
+    let cyan_drum = cyan_drum_percent.map(|percent| Drum {
+        level: 0,
+        max_level: 0,
+        level_percent: Some(percent),
+    });
+
+    let magenta_drum = magenta_drum_percent.map(|percent| Drum {
+        level: 0,
+        max_level: 0,
+        level_percent: Some(percent),
+    });
+
+    let yellow_drum = yellow_drum_percent.map(|percent| Drum {
+        level: 0,
+        max_level: 0,
+        level_percent: Some(percent),
+    });
+
+    let toners = Toners {
         black_toner,
         cyan_toner,
         magenta_toner,
         yellow_toner,
-    ))
+    };
+
+    let drums = Drums {
+        black_drum,
+        cyan_drum,
+        magenta_drum,
+        yellow_drum,
+    };
+
+    Ok(Printer::new(printer_name, toners, drums))
 }
 
 #[cfg(test)]
@@ -155,6 +197,24 @@ mod tests {
         assert_eq!(
             find_value_in_brother_bytes(&bytes_color, YELLOW_TONER_CODE),
             Some(79)
+        );
+
+        // Drums
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes_color, BLACK_DRUM_CODE),
+            Some(95)
+        );
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes_color, CYAN_DRUM_CODE),
+            None
+        );
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes_color, MAGENTA_DRUM_CODE),
+            None
+        );
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes_color, YELLOW_DRUM_CODE),
+            None
         );
         assert_eq!(find_value_in_brother_bytes(&bytes_color, 0x99), None);
     }
