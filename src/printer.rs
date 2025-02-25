@@ -11,6 +11,8 @@ use std::{
 pub enum PrinterSupply {
     Toner,
     Drum,
+    Fuser,
+    Reservoir,
 }
 
 impl Display for PrinterSupply {
@@ -18,6 +20,8 @@ impl Display for PrinterSupply {
         match self {
             Self::Toner => write!(f, "Toner"),
             Self::Drum => write!(f, "Drum"),
+            Self::Fuser => write!(f, "Fuser"),
+            Self::Reservoir => write!(f, "Reservoir"),
         }
     }
 }
@@ -71,6 +75,20 @@ pub struct Drums {
     pub yellow_drum: Option<Drum>,
 }
 
+#[derive(Clone)]
+pub struct Fuser {
+    pub level: i64,
+    pub max_level: i64,
+    pub level_percent: Option<i64>,
+}
+
+#[derive(Clone)]
+pub struct Reservoir {
+    pub level: i64,
+    pub max_level: i64,
+    pub level_percent: Option<i64>,
+}
+
 /// Represents a printer with toner levels and other relevant details.
 ///
 /// This struct stores information about a printer, including its name, brand,
@@ -80,14 +98,24 @@ pub struct Printer {
     pub name: String,
     pub toners: Toners,
     pub drums: Drums,
+    pub fuser: Option<Fuser>,
+    pub reservoir: Option<Reservoir>,
 }
 
 impl Printer {
-    pub fn new(name: String, toners: Toners, drums: Drums) -> Self {
+    pub fn new(
+        name: String,
+        toners: Toners,
+        drums: Drums,
+        fuser: Option<Fuser>,
+        reservoir: Option<Reservoir>,
+    ) -> Self {
         Self {
             name,
             toners,
             drums,
+            fuser,
+            reservoir,
         }
     }
 
@@ -173,6 +201,58 @@ impl Printer {
         if let Some(yellow_drum) = &mut self.drums.yellow_drum {
             yellow_drum.level_percent =
                 calculate_level_percent(yellow_drum.level, yellow_drum.max_level);
+        }
+    }
+
+    /// Calculates and updates the fuser level percentage.
+    ///
+    /// This function computes the percentage of fuser remaining by dividing the current level by the maximum
+    /// level and multiplying by 100.
+    /// If the maximum fuser level is zero, the function safely sets the percentage to `None`
+    /// to avoid division by zero.
+    ///
+    /// The calculated percentage is assigned directly to the `level_percent` field.
+    pub fn calc_and_update_fuser_level_percent(&mut self) {
+        let calculate_level_percent = |level: i64, max_level: i64| {
+            if max_level == 0 {
+                None
+            } else {
+                Some(
+                    (level * 100)
+                        .checked_div(max_level)
+                        .expect("Error calculating fuser level"),
+                )
+            }
+        };
+
+        if let Some(fuser) = &mut self.fuser {
+            fuser.level_percent = calculate_level_percent(fuser.level, fuser.max_level);
+        }
+    }
+
+    /// Calculates and updates the reservoir level percentage.
+    ///
+    /// This function computes the percentage of reservoir remaining by dividing the current level by the maximum
+    /// level and multiplying by 100.
+    /// If the maximum reservoir level is zero, the function safely sets the percentage to `None`
+    /// to avoid division by zero.
+    ///
+    /// The calculated percentage is assigned directly to the `level_percent` field.
+    pub fn calc_and_update_reservoir_level_percent(&mut self) {
+        let calculate_level_percent = |level: i64, max_level: i64| {
+            if max_level == 0 {
+                None
+            } else {
+                Some(
+                    (level * 100)
+                        .checked_div(max_level)
+                        .expect("Error calculating reservoir level"),
+                )
+            }
+        };
+
+        if let Some(reservoir) = &mut self.reservoir {
+            reservoir.level_percent = calculate_level_percent(reservoir.level, reservoir.max_level);
         }
     }
 }
@@ -275,6 +355,8 @@ mod tests {
                 magenta_drum: None,
                 yellow_drum: None,
             },
+            None,
+            None,
         );
 
         printer.calc_and_update_toners_level_percent();
@@ -324,6 +406,8 @@ mod tests {
                     level_percent: None,
                 }),
             },
+            None,
+            None,
         );
 
         printer.calc_and_update_drums_level_percent();
