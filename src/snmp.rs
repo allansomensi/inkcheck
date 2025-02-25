@@ -271,21 +271,13 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     //
     // ## Returns:
     // A Result containing the parsed OID as a `Vec<u64>` if found, or an `OidNotFound` error if not found.
-    let get_supply_oid = |supply: PrinterSupply, color: Option<TonerColor>, key: &str| {
-        if color.is_none() {
-            oids.get(supply.to_string().to_lowercase())
-                .and_then(|b| b.get(key))
-                .and_then(|l| l.as_str())
-                .map(parse_oid_to_vec)
-                .ok_or_else(|| AppError::OidNotFound)?
-        } else {
-            oids.get(supply.to_string().to_lowercase())
-                .and_then(|t| t.get(color.unwrap().to_string().to_lowercase()))
-                .and_then(|b| b.get(key))
-                .and_then(|l| l.as_str())
-                .map(parse_oid_to_vec)
-                .ok_or_else(|| AppError::OidNotFound)?
-        }
+    let get_supply_oid = |supply: PrinterSupply, color: TonerColor, key: &str| {
+        oids.get(supply.to_string().to_lowercase())
+            .and_then(|t| t.get(color.to_string().to_lowercase()))
+            .and_then(|b| b.get(key))
+            .and_then(|l| l.as_str())
+            .map(parse_oid_to_vec)
+            .ok_or_else(|| AppError::OidNotFound)?
     };
 
     //
@@ -293,80 +285,52 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     //
 
     // Toners
-    let black_toner_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "level")?;
+    let black_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Black, "level")?;
     let black_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, TonerColor::Black, "max_level")?;
 
-    let cyan_toner_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "level")?;
+    let cyan_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Cyan, "level")?;
     let cyan_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, TonerColor::Cyan, "max_level")?;
 
     let magenta_toner_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "level")?;
+        get_supply_oid(PrinterSupply::Toner, TonerColor::Magenta, "level")?;
     let magenta_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, TonerColor::Magenta, "max_level")?;
 
-    let yellow_toner_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "level")?;
+    let yellow_toner_level_oid = get_supply_oid(PrinterSupply::Toner, TonerColor::Yellow, "level")?;
     let yellow_toner_max_level_oid =
-        get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "max_level")?;
+        get_supply_oid(PrinterSupply::Toner, TonerColor::Yellow, "max_level")?;
 
     // Drums
-    let mut black_drum_level_oid: Option<Vec<u64>> = None;
-    let mut black_drum_max_level_oid: Option<Vec<u64>> = None;
+    let mut black_drum_level_oid: Vec<u64> = Vec::new();
+    let mut black_drum_max_level_oid: Vec<u64> = Vec::new();
 
-    let mut cyan_drum_level_oid: Option<Vec<u64>> = None;
-    let mut cyan_drum_max_level_oid: Option<Vec<u64>> = None;
+    let mut cyan_drum_level_oid: Vec<u64> = Vec::new();
+    let mut cyan_drum_max_level_oid: Vec<u64> = Vec::new();
 
-    let mut magenta_drum_level_oid: Option<Vec<u64>> = None;
-    let mut magenta_drum_max_level_oid: Option<Vec<u64>> = None;
+    let mut magenta_drum_level_oid: Vec<u64> = Vec::new();
+    let mut magenta_drum_max_level_oid: Vec<u64> = Vec::new();
 
-    let mut yellow_drum_level_oid: Option<Vec<u64>> = None;
-    let mut yellow_drum_max_level_oid: Option<Vec<u64>> = None;
+    let mut yellow_drum_level_oid: Vec<u64> = Vec::new();
+    let mut yellow_drum_max_level_oid: Vec<u64> = Vec::new();
 
     if params.extra_supplies {
-        black_drum_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Black),
-            "level",
-        )?);
-        black_drum_max_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Black),
-            "max_level",
-        )?);
-        cyan_drum_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Cyan),
-            "level",
-        )?);
-        cyan_drum_max_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Cyan),
-            "max_level",
-        )?);
-        magenta_drum_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Magenta),
-            "level",
-        )?);
-        magenta_drum_max_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Magenta),
-            "max_level",
-        )?);
-        yellow_drum_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Yellow),
-            "level",
-        )?);
-        yellow_drum_max_level_oid = Some(get_supply_oid(
-            PrinterSupply::Drum,
-            Some(TonerColor::Yellow),
-            "max_level",
-        )?);
+        black_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Black, "level")?;
+        black_drum_max_level_oid =
+            get_supply_oid(PrinterSupply::Drum, TonerColor::Black, "max_level")?;
+
+        cyan_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Cyan, "level")?;
+        cyan_drum_max_level_oid =
+            get_supply_oid(PrinterSupply::Drum, TonerColor::Cyan, "max_level")?;
+
+        magenta_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Magenta, "level")?;
+        magenta_drum_max_level_oid =
+            get_supply_oid(PrinterSupply::Drum, TonerColor::Magenta, "max_level")?;
+
+        yellow_drum_level_oid = get_supply_oid(PrinterSupply::Drum, TonerColor::Yellow, "level")?;
+        yellow_drum_max_level_oid =
+            get_supply_oid(PrinterSupply::Drum, TonerColor::Yellow, "max_level")?;
     }
 
     //
@@ -411,40 +375,42 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
             None
         };
 
-    let black_drum = if black_drum_level_oid.is_some() && black_drum_max_level_oid.is_some() {
+    let black_drum = if !black_drum_level_oid.is_empty() && !black_drum_max_level_oid.is_empty() {
         Some(Drum {
-            level: get_snmp_value(&black_drum_level_oid.unwrap(), params)?,
-            max_level: get_snmp_value(&black_drum_max_level_oid.unwrap(), params)?,
+            level: get_snmp_value(&black_drum_level_oid, params)?,
+            max_level: get_snmp_value(&black_drum_max_level_oid, params)?,
             level_percent: None,
         })
     } else {
         None
     };
 
-    let cyan_drum = if cyan_drum_level_oid.is_some() && cyan_drum_max_level_oid.is_some() {
+    let cyan_drum = if !cyan_drum_level_oid.is_empty() && !cyan_drum_max_level_oid.is_empty() {
         Some(Drum {
-            level: get_snmp_value(&cyan_drum_level_oid.unwrap(), params)?,
-            max_level: get_snmp_value(&cyan_drum_max_level_oid.unwrap(), params)?,
+            level: get_snmp_value(&cyan_drum_level_oid, params)?,
+            max_level: get_snmp_value(&cyan_drum_max_level_oid, params)?,
             level_percent: None,
         })
     } else {
         None
     };
 
-    let magenta_drum = if magenta_drum_level_oid.is_some() && magenta_drum_max_level_oid.is_some() {
-        Some(Drum {
-            level: get_snmp_value(&magenta_drum_level_oid.unwrap(), params)?,
-            max_level: get_snmp_value(&magenta_drum_max_level_oid.unwrap(), params)?,
-            level_percent: None,
-        })
-    } else {
-        None
-    };
+    let magenta_drum =
+        if !magenta_drum_level_oid.is_empty() && !magenta_drum_max_level_oid.is_empty() {
+            Some(Drum {
+                level: get_snmp_value(&magenta_drum_level_oid, params)?,
+                max_level: get_snmp_value(&magenta_drum_max_level_oid, params)?,
+                level_percent: None,
+            })
+        } else {
+            None
+        };
 
-    let yellow_drum = if yellow_drum_level_oid.is_some() && yellow_drum_max_level_oid.is_some() {
+    let yellow_drum = if !yellow_drum_level_oid.is_empty() && !yellow_drum_max_level_oid.is_empty()
+    {
         Some(Drum {
-            level: get_snmp_value(&yellow_drum_level_oid.unwrap(), params)?,
-            max_level: get_snmp_value(&yellow_drum_max_level_oid.unwrap(), params)?,
+            level: get_snmp_value(&yellow_drum_level_oid, params)?,
+            max_level: get_snmp_value(&yellow_drum_max_level_oid, params)?,
             level_percent: None,
         })
     } else {
