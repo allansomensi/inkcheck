@@ -1,6 +1,6 @@
 use crate::{
     error::AppError,
-    printer::{Drum, Drums, Printer, Toner, Toners},
+    printer::{Drum, Drums, Fuser, Printer, Toner, Toners},
     snmp::{get_snmp_value, SnmpClientParams},
 };
 
@@ -13,6 +13,8 @@ const BLACK_DRUM_CODE: u8 = 0x41;
 const CYAN_DRUM_CODE: u8 = 0x79;
 const MAGENTA_DRUM_CODE: u8 = 0x7a;
 const YELLOW_DRUM_CODE: u8 = 0x7b;
+
+const FUSER_CODE: u8 = 0x6a;
 
 /// The function scans for the exact sequence `[toner_code, 0x01, 0x04]`.
 /// If the sequence is found, the next **4 bytes** are extracted as a big-endian `u32` value,
@@ -62,6 +64,8 @@ pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, 
     let magenta_drum_percent = find_value_in_brother_bytes(&bytes, MAGENTA_DRUM_CODE);
     let yellow_drum_percent = find_value_in_brother_bytes(&bytes, YELLOW_DRUM_CODE);
 
+    let fuser_percent = find_value_in_brother_bytes(&bytes, FUSER_CODE);
+
     let black_toner = Toner {
         level: 0,
         max_level: 0,
@@ -110,6 +114,12 @@ pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, 
         level_percent: Some(percent),
     });
 
+    let fuser = fuser_percent.map(|percent| Fuser {
+        level: 0,
+        max_level: 0,
+        level_percent: Some(percent),
+    });
+
     let toners = Toners {
         black_toner,
         cyan_toner,
@@ -124,7 +134,7 @@ pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, 
         yellow_drum,
     };
 
-    Ok(Printer::new(printer_name, toners, drums))
+    Ok(Printer::new(printer_name, toners, drums, fuser, None))
 }
 
 #[cfg(test)]
@@ -216,6 +226,13 @@ mod tests {
             find_value_in_brother_bytes(&bytes_color, YELLOW_DRUM_CODE),
             None
         );
+
+        // Fuser
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes_color, FUSER_CODE),
+            Some(99)
+        );
+
         assert_eq!(find_value_in_brother_bytes(&bytes_color, 0x99), None);
     }
 }
