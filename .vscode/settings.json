@@ -1,0 +1,7 @@
+{
+    "material-icon-theme.folders.associations": {
+        "printer": "content",
+        "snmp": "connection",
+        "special": "custom",
+    }
+}
