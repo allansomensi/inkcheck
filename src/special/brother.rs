@@ -54,13 +54,13 @@ pub fn get_supplies_levels(
     ctx: &SnmpClientParams,
     printer_name: String,
 ) -> Result<Printer, AppError> {
+    // This OID stores most of the supply information in hexadecimal format
     let br_info_maintenance_oid = &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0];
 
     let bytes = get_snmp_value::<Vec<u8>>(br_info_maintenance_oid, ctx)?;
 
     let black_toner_percent = find_value_in_brother_bytes(&bytes, BLACK_TONER_CODE)
         .ok_or(AppError::UnsupportedPrinter("Brother".to_string()))?;
-
     let cyan_toner_percent = find_value_in_brother_bytes(&bytes, CYAN_TONER_CODE);
     let magenta_toner_percent = find_value_in_brother_bytes(&bytes, MAGENTA_TONER_CODE);
     let yellow_toner_percent = find_value_in_brother_bytes(&bytes, YELLOW_TONER_CODE);
@@ -72,59 +72,20 @@ pub fn get_supplies_levels(
 
     let fuser_percent = find_value_in_brother_bytes(&bytes, FUSER_CODE);
 
-    let black_toner = Toner {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(black_toner_percent),
-    };
+    // Toners
+    let black_toner = Toner::new(0, 0, Some(black_toner_percent));
+    let cyan_toner = cyan_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
+    let magenta_toner = magenta_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
+    let yellow_toner = yellow_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
 
-    let cyan_toner = cyan_toner_percent.map(|percent| Toner {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
+    // Drums
+    let black_drum = black_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
+    let cyan_drum = cyan_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
+    let magenta_drum = magenta_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
+    let yellow_drum = yellow_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
 
-    let magenta_toner = magenta_toner_percent.map(|percent| Toner {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let yellow_toner = yellow_toner_percent.map(|percent| Toner {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let black_drum = black_drum_percent.map(|percent| Drum {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let cyan_drum = cyan_drum_percent.map(|percent| Drum {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let magenta_drum = magenta_drum_percent.map(|percent| Drum {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let yellow_drum = yellow_drum_percent.map(|percent| Drum {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
-
-    let fuser = fuser_percent.map(|percent| Fuser {
-        level: 0,
-        max_level: 0,
-        level_percent: Some(percent),
-    });
+    // Other
+    let fuser = fuser_percent.map(|percent| Fuser::new(0, 0, Some(percent)));
 
     let toners = Toners {
         black_toner,
@@ -195,6 +156,7 @@ mod tests {
             None
         );
 
+        // Inexistent code in mono
         assert_eq!(find_value_in_brother_bytes(&bytes_mono, 0x99), None);
 
         // Color
@@ -239,6 +201,7 @@ mod tests {
             Some(99)
         );
 
+        // Inexistent code in color
         assert_eq!(find_value_in_brother_bytes(&bytes_color, 0x99), None);
     }
 }
