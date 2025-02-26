@@ -1,7 +1,10 @@
 use crate::{
     error::AppError,
-    printer::{Drum, Drums, Fuser, Printer, Toner, Toners},
-    snmp::{get_snmp_value, SnmpClientParams},
+    printer::{
+        supply::{Drum, Drums, Fuser, Toner, Toners},
+        Printer,
+    },
+    snmp::{value::get_snmp_value, SnmpClientParams},
 };
 
 const BLACK_TONER_CODE: u8 = 0x6F;
@@ -47,7 +50,10 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
 /// It attempts to read the toner levels for black, cyan, magenta, and yellow toners. If any toner
 /// is not found, it will be returned as [None] in the [Printer] struct.
 /// If the black toner is not found, an error is returned.
-pub fn brother(ctx: &SnmpClientParams, printer_name: String) -> Result<Printer, AppError> {
+pub fn get_supplies_levels(
+    ctx: &SnmpClientParams,
+    printer_name: String,
+) -> Result<Printer, AppError> {
     let br_info_maintenance_oid = &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0];
 
     let bytes = get_snmp_value::<Vec<u8>>(br_info_maintenance_oid, ctx)?;
