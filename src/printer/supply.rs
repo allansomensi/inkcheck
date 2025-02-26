@@ -35,6 +35,16 @@ pub struct Toner {
     pub level_percent: Option<i64>,
 }
 
+impl Toner {
+    pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
+        Self {
+            level,
+            max_level,
+            level_percent,
+        }
+    }
+}
+
 /// Represents the different colors of toner cartridges.
 pub enum TonerColor {
     Black,
@@ -61,6 +71,16 @@ pub struct Drum {
     pub level_percent: Option<i64>,
 }
 
+impl Drum {
+    pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
+        Self {
+            level,
+            max_level,
+            level_percent,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Drums {
     pub black_drum: Option<Drum>,
@@ -74,6 +94,16 @@ pub struct Fuser {
     pub level: i64,
     pub max_level: i64,
     pub level_percent: Option<i64>,
+}
+
+impl Fuser {
+    pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
+        Self {
+            level,
+            max_level,
+            level_percent,
+        }
+    }
 }
 
 #[derive(Clone)]
