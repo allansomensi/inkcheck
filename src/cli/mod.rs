@@ -1,12 +1,15 @@
 use crate::{
     error::AppError,
-    printer::{Printer, TonerColor},
-    snmp::{SnmpClientParams, SnmpVersion},
+    printer::{supply::TonerColor, Printer},
+    snmp::{version::SnmpVersion, SnmpClientParams},
 };
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{fmt::Display, net::Ipv4Addr, path::PathBuf, thread, time::Duration};
+use std::{net::Ipv4Addr, path::PathBuf, thread, time::Duration};
+use theme::{get_theme_chars, CliTheme};
+
+mod theme;
 
 /// Structure that holds general parameters for the application.
 ///
@@ -22,45 +25,6 @@ pub struct AppParams {
 /// This structure defines the settings specific to the CLI, such as the theme to be used.
 pub struct CliParams {
     pub theme: CliTheme,
-}
-
-/// Enum representing different CLI themes.
-///
-/// This enum defines the available themes that can be used in the CLI interface,
-/// affecting the visual presentation.
-#[derive(Debug, Clone, ValueEnum)]
-pub enum CliTheme {
-    Solid,
-    Blocks,
-    Circles,
-    Diamonds,
-    Shades,
-    Vintage,
-    Stars,
-    Emoji,
-    Moon,
-}
-
-impl Display for CliTheme {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Solid => write!(f, "solid"),
-            Self::Blocks => write!(f, "blocks"),
-            Self::Circles => write!(f, "circles"),
-            Self::Diamonds => write!(f, "diamonds"),
-            Self::Shades => write!(f, "shades"),
-            Self::Vintage => write!(f, "vintage"),
-            Self::Stars => write!(f, "stars"),
-            Self::Emoji => write!(f, "emoji"),
-            Self::Moon => write!(f, "moon"),
-        }
-    }
-}
-
-impl Default for CliTheme {
-    fn default() -> Self {
-        Self::Solid
-    }
 }
 
 #[derive(clap::Parser, Debug)]
@@ -118,22 +82,6 @@ pub fn parse_args() -> Result<AppParams, AppError> {
     Ok(params)
 }
 
-fn theme_chars(theme: &CliTheme) -> String {
-    let theme_chars = match theme {
-        CliTheme::Solid => "█ ",
-        CliTheme::Blocks => "█▓▒░",
-        CliTheme::Circles => "●○",
-        CliTheme::Diamonds => "◆◇",
-        CliTheme::Shades => "▉▇▆▅▄▃▂▁",
-        CliTheme::Vintage => "#-",
-        CliTheme::Stars => "★☆",
-        CliTheme::Emoji => "😊🙂😐🙁😞",
-        CliTheme::Moon => "🌕🌖🌗🌘🌑",
-    };
-
-    theme_chars.to_string()
-}
-
 /// Displays a progress bar representing the toner level.
 ///
 /// ## Arguments
@@ -141,7 +89,7 @@ fn theme_chars(theme: &CliTheme) -> String {
 /// * `toner_color` - The color of the toner from the [TonerColor] enum.
 /// * `theme` - The [CliTheme] selected by the user.
 fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
-    let theme_chars = theme_chars(theme);
+    let theme_chars = get_theme_chars(theme);
 
     let color: &str = match toner_color {
         TonerColor::Black => "white",
@@ -158,7 +106,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars(theme_chars.as_str()),
+            .progress_chars(theme_chars),
     );
 
     for _ in 0..level {
@@ -176,7 +124,7 @@ fn show_toner_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
 /// * `toner_color` - The color of the drum from the [TonerColor] enum.
 /// * `theme` - The [CliTheme] selected by the user.
 fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
-    let theme_chars = theme_chars(theme);
+    let theme_chars = get_theme_chars(theme);
 
     let color: &str = match toner_color {
         TonerColor::Black => "white",
@@ -193,7 +141,7 @@ fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(&template)
             .unwrap()
-            .progress_chars(theme_chars.as_str()),
+            .progress_chars(theme_chars),
     );
 
     for _ in 0..level {
@@ -210,7 +158,7 @@ fn show_drum_progress(level: u8, toner_color: TonerColor, theme: &CliTheme) {
 /// * `level` - The fuser level as a percentage (0-100).
 /// * `theme` - The [CliTheme] selected by the user.
 fn show_fuser_progress(level: u8, theme: &CliTheme) {
-    let theme_chars = theme_chars(theme);
+    let theme_chars = get_theme_chars(theme);
 
     let template = "{prefix:9.gray.bold} [{bar:25.white}] {percent:3}%";
 
@@ -220,7 +168,7 @@ fn show_fuser_progress(level: u8, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(template)
             .unwrap()
-            .progress_chars(theme_chars.as_str()),
+            .progress_chars(theme_chars),
     );
 
     for _ in 0..level {
@@ -237,7 +185,7 @@ fn show_fuser_progress(level: u8, theme: &CliTheme) {
 /// * `level` - The waste toner container level as a percentage (0-100).
 /// * `theme` - The [CliTheme] selected by the user.
 fn show_reservoir_progress(level: u8, theme: &CliTheme) {
-    let theme_chars = theme_chars(theme);
+    let theme_chars = get_theme_chars(theme);
 
     let template = "{prefix:9.gray.bold} [{bar:25.white}] {percent:3}%";
 
@@ -247,7 +195,7 @@ fn show_reservoir_progress(level: u8, theme: &CliTheme) {
         ProgressStyle::default_bar()
             .template(template)
             .unwrap()
-            .progress_chars(theme_chars.as_str()),
+            .progress_chars(theme_chars),
     );
 
     for _ in 0..level {

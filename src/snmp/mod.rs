@@ -1,39 +1,20 @@
 use crate::{
     error::AppError,
     printer::{
-        load_printer, Drum, Drums, Fuser, Printer, PrinterSupply, Reservoir, Toner, TonerColor,
-        Toners,
+        load::load_printer,
+        supply::{Drum, Drums, Fuser, PrinterSupply, Reservoir, Toner, TonerColor, Toners},
+        Printer,
     },
     special,
     utils::parse_oid_to_vec,
 };
-use clap::ValueEnum;
-use snmp2::{Oid, SyncSession, Value};
-use std::{fmt::Display, net::Ipv4Addr, path::PathBuf, time::Duration};
+use snmp2::SyncSession;
+use std::{net::Ipv4Addr, path::PathBuf, time::Duration};
+use value::get_snmp_value;
+use version::SnmpVersion;
 
-/// Represents the different versions of the SNMP.
-#[derive(Copy, Clone, ValueEnum, Debug)]
-pub enum SnmpVersion {
-    V1,
-    V2c,
-    V3,
-}
-
-impl Display for SnmpVersion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::V1 => write!(f, "v1"),
-            Self::V2c => write!(f, "v2c"),
-            Self::V3 => write!(f, "v3"),
-        }
-    }
-}
-
-impl Default for SnmpVersion {
-    fn default() -> Self {
-        Self::V2c
-    }
-}
+pub mod value;
+pub mod version;
 
 /// Represents the parameters for an SNMP client connection.
 ///
@@ -46,118 +27,6 @@ pub struct SnmpClientParams {
     pub timeout: u64,
     pub data_dir: Option<PathBuf>,
     pub extra_supplies: bool,
-}
-
-/// A trait for converting SNMP `Value` types into Rust types.
-///
-/// This trait defines a method to convert a given SNMP `Value` to a specific Rust type. It allows SNMP data
-/// to be easily mapped to the appropriate types in the application.
-///
-/// The `from_snmp_value` method converts the SNMP `Value` to the implementing type. If the conversion is not possible,
-/// it returns an error message.
-///
-/// ## Implementations
-/// The following types implement [FromSnmpValue]:
-/// - [i64]: Converts from an SNMP [Value::Integer] value.
-/// - [String]: Converts from an SNMP [Value::OctetString] value.
-/// - [Vec<u64>]: Converts from an SNMP [Value::ObjectIdentifier] value, splitting the OID string into individual components.
-/// - [Vec<u8>]: Converts from an SNMP [Value::OctetString] bytes.
-/// - [u32]: Converts from an SNMP [Value::Unsigned32], [Value::Counter32], or [Value::Timeticks] value.
-/// - [u64]: Converts from an SNMP [Value::Counter64] value.
-/// - [bool]: Converts from an SNMP [Value::Boolean] value.
-pub trait FromSnmpValue<'a>: Sized {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError>;
-}
-
-impl<'a> FromSnmpValue<'a> for i64 {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::Integer(v) = value {
-            Ok(*v)
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected Integer, but received a different type".to_string(),
-            ))
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for String {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::OctetString(v) = value {
-            Ok(String::from_utf8_lossy(v).to_string())
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected OctetString, but received a different type".to_string(),
-            ))
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for Vec<u64> {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::ObjectIdentifier(v) = value {
-            let oid_string = v.to_string();
-            oid_string
-                .split('.')
-                .map(|s| {
-                    s.parse::<u64>()
-                        .map_err(|_| AppError::ParseError(format!("Failed to parse '{s}' as u64")))
-                })
-                .collect()
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected ObjectIdentifier, but received a different type".to_string(),
-            ))
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for Vec<u8> {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::OctetString(v) = value {
-            Ok(v.to_vec())
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected OctetString, but received a different type".to_string(),
-            ))
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for u32 {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        match value {
-            Value::Unsigned32(v) | Value::Counter32(v) | Value::Timeticks(v) => Ok(*v),
-            _ => Err(AppError::TypeMismatch(
-                "Expected Unsigned32, Counter32, or Timeticks, but received a different type"
-                    .to_string(),
-            )),
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for u64 {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::Counter64(v) = value {
-            Ok(*v)
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected Counter64, but received a different type".to_string(),
-            ))
-        }
-    }
-}
-
-impl<'a> FromSnmpValue<'a> for bool {
-    fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::Boolean(v) = value {
-            Ok(*v)
-        } else {
-            Err(AppError::TypeMismatch(
-                "Expected Boolean, but received a different type".to_string(),
-            ))
-        }
-    }
 }
 
 pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppError> {
@@ -173,47 +42,6 @@ pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppErr
             SyncSession::new_v2c(agent_address, community, Some(timeout), 0).map_err(AppError::from)
         }
         SnmpVersion::V3 => Err(AppError::UnsupportedVersion),
-    }
-}
-
-/// Retrieves an SNMP value for a given OID and converts it to the specified type.
-///
-/// This function performs an SNMP `GET` operation for a specified OID and converts the resulting SNMP value
-/// into the desired Rust type using the [FromSnmpValue] trait. It creates an SNMP session using the provided
-/// [SnmpClientParams] and returns the value as the requested type.
-///
-/// ## Arguments:
-/// - `oid`: A slice of `u64` representing the OID to retrieve from the SNMP device.
-/// - `ctx`: A reference to [SnmpClientParams] containing the SNMP client parameters.
-///
-/// ## Returns:
-/// - `Result<T, String>`: Returns the SNMP value converted to type `T` if successful, or an error message if the operation fails.
-///
-/// ## Type Constraints:
-/// - `T`: The target type, which must implement the [FromSnmpValue] trait. This allows the conversion of the SNMP value
-///        into any type that supports this trait.
-pub fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
-where
-    T: for<'a> FromSnmpValue<'a>,
-{
-    let mut session = match create_snmp_session(ctx) {
-        Ok(session) => session,
-        Err(e) => {
-            eprintln!("{e}");
-            std::process::exit(1);
-        }
-    };
-
-    let oid = Oid::from(oid).map_err(|_| AppError::OidConversion)?;
-
-    let mut response = session
-        .get(&oid)
-        .map_err(|e| AppError::SnmpRequest(e.to_string()))?;
-
-    if let Some((_oid, value)) = response.varbinds.next() {
-        Ok(T::from_snmp_value(&value)?)
-    } else {
-        Err(AppError::OidNotFound)
     }
 }
 
@@ -253,7 +81,7 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
 
     // Special handling for Brother printers
     if model.to_lowercase().contains("brother") {
-        return special::brother(params, model.clone());
+        return special::brother::get_supplies_levels(params, model.clone());
     }
 
     let data_dir = params.data_dir.clone();
