@@ -1,0 +1,35 @@
+name: Feature Request
+title: '[feat] '
+description: Suggest an feature idea
+labels: ['type: feature request']
+
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Describe the problem
+      description: A clear description of the problem this feature would solve
+      placeholder: "I often encounter this issue when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What solution do you propose?
+      description: A clear explanation of the feature you are requesting
+      placeholder: "I suggest adding..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative solutions you've considered
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here.
