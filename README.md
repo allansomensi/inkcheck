@@ -1,78 +1,94 @@
-# InkCheck
+# InkCheck 🖨️
 
-**InkCheck** is a CLI tool to quickly check the status of printer supplies via the command line. Written in Rust.
+**InkCheck** is a CLI tool built in Rust that checks printer supply levels via `SNMP`. It provides a fast and efficient way to monitor the status of **toner**, **drum**, **fuser** and other consumables for both **color** and **monochrome** printers directly from the command line.
 
-# Getting Started 🎯
-## Prerequisites:
+![preview](https://github.com/user-attachments/assets/97243faf-8140-40cb-b43d-a0953070f4b7)
 
-- **Rust** *(latest stable version)*
 
-## Dev
+## 🚀 Getting Started
 
-``` bash
+### Prerequisites
+- **Rust** (latest stable version).
+
+### Cloning the Repository
+```bash
 git clone https://github.com/allansomensi/inkcheck.git
 cd inkcheck
 ```
 
-For the scripts:
-``` elixir
+### Development Setup
+To use the development scripts, install `just`:
+
+```elixir
 cargo install just
 ```
 
-## Installation
+## 📦 Installation
+To install from the source:
 
-``` elixir
+```elixir
 cargo install --path .
 ```
 
-## Usage
-``` elixir
+## 🔧 Usage
+Run with the following command:
+
+```elixir
 inkcheck [IP] [OPTIONS]
 ```
 
-**Options:**
-  - `--port` *[PORT]*            SNMP Service Port **[default: 161]**
-  - `--snmp-version` *[VERSION]* SNMP Version **[default: v2c]**
-  - `--community` *[COMMUNITY]*  SNMP Community **[default: public]**
-  - `--timeout` *[TIMEOUT]*      Timeout in seconds **[default: 5]**
-  - `--data-dir` *[DIR]*         Data directory
-  - `--theme` *[THEME]*          CLI theme **[default: solid]**
-  - `-h, --help`               Print help
-  - `-V, --version`            Print version
+### Options:
 
-### Example
+- `-p, --port [PORT]`            - SNMP service port **(default: 161)**
+- `-s, --snmp-version [VERSION]` - SNMP version **(default: v2c)**
+- `-c, --community [COMMUNITY]`  - SNMP community **(default: public)**
+- `-t, --timeout [TIMEOUT]`      - Timeout in seconds **(default: 5)**
+- `-d, --data-dir [DIR]`         - Data directory
+- `--theme [THEME]`              - CLI theme **(default: solid)**
+- `-e, --extra_supplies`         - Show extra supplies informations
+- `-h, --help`                   - Display help information
+- `-V, --version`                - Display version information
 
-> This will fetch the toner levels from the printer at IP **192.168.1.10**, using the moon theme, and a timeout of 10 seconds.
-``` elixir
-cargo run 192.168.1.10 --theme moon --timeout 10
+### Example:
+To check the supply levels of a printer at `192.168.1.10`, using the `moon` theme, displaying `extra supplies`, and setting a `timeout` of 10 seconds:
+
+```elixir
+inkcheck 192.168.1.10 --theme moon -e -t 10
 ```
 
-## Themes
-The available themes are:
+## 🎨 Themes
+Supports multiple visual themes for better readability and personalization. Below are the available themes:
 
-### Solid:
-![solid](https://github.com/user-attachments/assets/ee5dbe47-62e2-475d-8e53-b4b1626469c5)
+- Solid
+- Shades
+- Moon
+- Circles
+- Stars
+- Vintage
+- Diamonds
+- Blocks
+- Emoji
 
-### Shades
-![shades](https://github.com/user-attachments/assets/928e1445-40e1-4b8c-96b9-a7a1c2cdecf4)
+---
 
-### Moon
-![moon](https://github.com/user-attachments/assets/f5e96cfc-4ea4-4100-bb45-8985af1bb430)
+## 🖨️ Tested Printers
+Below is a list of printers that have been tested:
 
-### Circles
-![circles](https://github.com/user-attachments/assets/cff648b6-50d9-42db-9e07-233c2403013a)
+- Brother MFC-L6702DW
+- Brother DCP-8157DN
+- Brother DCP-8152DN
+- Brother MFC-7460DN
+- Brother MFC-L8900CDW
+- Brother DCP-L5652DN
+- Brother MFC-J6935DW
+- Brother HL-L2360DW
+- Brother L2540
+- OKI B431
+- Xerox C8030
 
-### Stars
-![stars](https://github.com/user-attachments/assets/5ebe3510-1293-42c5-a3a0-a44661c91651)
+If you've tested with another printer model, feel free to contribute by adding it to the list!
 
-### Vintage:
-![vintage](https://github.com/user-attachments/assets/6baf98d5-4425-42de-88b0-5d956aadcdd0)
+---
 
-### Diamonds
-![diamonds](https://github.com/user-attachments/assets/2d60d616-e729-4d1a-8daa-3f4c103cbed0)
-
-### Blocks
-![blocks](https://github.com/user-attachments/assets/b6950cb6-e365-4d20-a2b1-67a4f8c25206)
-
-### Emoji
-![emoji](https://github.com/user-attachments/assets/48e190b8-c18b-4c0b-8314-bfb36105a82a)
+## 📬 Contributing
+Contributions are welcome! Feel free to open issues or submit pull requests.
