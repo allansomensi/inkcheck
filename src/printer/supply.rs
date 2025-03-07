@@ -22,7 +22,7 @@ impl Display for PrinterSupply {
 
 #[derive(Clone)]
 pub struct Toners {
-    pub black_toner: Toner,
+    pub black_toner: Option<Toner>,
     pub cyan_toner: Option<Toner>,
     pub magenta_toner: Option<Toner>,
     pub yellow_toner: Option<Toner>,

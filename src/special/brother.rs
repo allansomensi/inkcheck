@@ -53,14 +53,18 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
 pub fn get_supplies_levels(
     ctx: &SnmpClientParams,
     printer_name: String,
+    old_model: bool,
 ) -> Result<Printer, AppError> {
     // This OID stores most of the supply information in hexadecimal format
-    let br_info_maintenance_oid = &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0];
+    let br_info_maintenance_oid = if old_model {
+        &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 11, 0] // brInfoNextCare
+    } else {
+        &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0]
+    };
 
     let bytes = get_snmp_value::<Vec<u8>>(br_info_maintenance_oid, ctx)?;
 
-    let black_toner_percent = find_value_in_brother_bytes(&bytes, BLACK_TONER_CODE)
-        .ok_or(AppError::UnsupportedPrinter("Brother".to_string()))?;
+    let black_toner_percent = find_value_in_brother_bytes(&bytes, BLACK_TONER_CODE);
     let cyan_toner_percent = find_value_in_brother_bytes(&bytes, CYAN_TONER_CODE);
     let magenta_toner_percent = find_value_in_brother_bytes(&bytes, MAGENTA_TONER_CODE);
     let yellow_toner_percent = find_value_in_brother_bytes(&bytes, YELLOW_TONER_CODE);
@@ -73,7 +77,7 @@ pub fn get_supplies_levels(
     let fuser_percent = find_value_in_brother_bytes(&bytes, FUSER_CODE);
 
     // Toners
-    let black_toner = Toner::new(0, 0, Some(black_toner_percent));
+    let black_toner = black_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
     let cyan_toner = cyan_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
     let magenta_toner = magenta_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
     let yellow_toner = yellow_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
@@ -203,5 +207,27 @@ mod tests {
 
         // Inexistent code in color
         assert_eq!(find_value_in_brother_bytes(&bytes_color, 0x99), None);
+    }
+
+    #[test]
+    fn test_find_value_in_old_models() {
+        let bytes = vec![
+            0x41, 0x01, 0x04, 0x00, 0x00, 0x17, 0x53, 0x82, 0x01, 0x04, 0x00, 0x00, 0x3A, 0x50,
+            0x73, 0x01, 0x04, 0x00, 0x00, 0xE1, 0x07, 0x86, 0x01, 0x04, 0x00, 0x00, 0xC3, 0x14,
+            0x77, 0x01, 0x04, 0x00, 0x00, 0xE6, 0x86, 0x81, 0x01, 0x04, 0x00, 0x00, 0xE1, 0x07,
+            0x89, 0x01, 0x04, 0x00, 0x00, 0xE1, 0x07, 0xFF,
+        ];
+
+        let empty_bytes: Vec<u8> = Vec::new();
+
+        assert_eq!(
+            find_value_in_brother_bytes(&empty_bytes, BLACK_DRUM_CODE),
+            None
+        );
+
+        assert_eq!(
+            find_value_in_brother_bytes(&bytes, BLACK_DRUM_CODE),
+            Some(59)
+        );
     }
 }
