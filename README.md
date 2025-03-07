@@ -82,6 +82,7 @@ Below is a list of printers that have been tested:
 - Brother DCP-L5652DN
 - Brother MFC-J6935DW
 - Brother HL-L2360DW
+- Brother HL-5350DN
 - Brother L2540
 - OKI B431
 - Xerox C8030
