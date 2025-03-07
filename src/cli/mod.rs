@@ -89,7 +89,12 @@ pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: &CliTh
 
     println!("--> {}\n", "Toner:".bright_white().bold());
 
-    if let Some(level) = printer.toners.black_toner.level_percent {
+    if let Some(level) = printer
+        .toners
+        .black_toner
+        .as_ref()
+        .and_then(|t| t.level_percent)
+    {
         show_progress("Black".bright_white(), level as u8, "white", theme);
     }
 

@@ -81,7 +81,10 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
 
     // Special handling for Brother printers
     if model.to_lowercase().contains("brother") {
-        return special::brother::get_supplies_levels(params, model.clone());
+        // Special handling for old models
+        let old_model = model.contains("HL-5350DN");
+
+        return special::brother::get_supplies_levels(params, model.clone(), old_model);
     }
 
     let data_dir = params.data_dir.clone();
@@ -194,10 +197,15 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     // Values
     //
 
-    let black_toner = Toner {
-        level: get_snmp_value(&black_toner_level_oid, params)?,
-        max_level: get_snmp_value(&black_toner_max_level_oid, params)?,
-        level_percent: None,
+    let black_toner = if !black_toner_level_oid.is_empty() && !black_toner_max_level_oid.is_empty()
+    {
+        Some(Toner {
+            level: get_snmp_value(&black_toner_level_oid, params)?,
+            max_level: get_snmp_value(&black_toner_max_level_oid, params)?,
+            level_percent: None,
+        })
+    } else {
+        None
     };
 
     let cyan_toner = if !cyan_toner_level_oid.is_empty() && !cyan_toner_max_level_oid.is_empty() {

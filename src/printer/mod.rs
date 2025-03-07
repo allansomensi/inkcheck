@@ -55,10 +55,10 @@ impl Printer {
             }
         };
 
-        self.toners.black_toner.level_percent = calculate_level_percent(
-            self.toners.black_toner.level,
-            self.toners.black_toner.max_level,
-        );
+        if let Some(black_toner) = &mut self.toners.black_toner {
+            black_toner.level_percent =
+                calculate_level_percent(black_toner.level, black_toner.max_level);
+        }
 
         if let Some(cyan_toner) = &mut self.toners.cyan_toner {
             cyan_toner.level_percent =
@@ -184,11 +184,11 @@ mod tests {
         let mut printer = Printer::new(
             String::from("OKI B431"),
             Toners {
-                black_toner: Toner {
+                black_toner: Some(Toner {
                     level: 2800,
                     max_level: 3500,
                     level_percent: None,
-                },
+                }),
                 cyan_toner: Some(Toner {
                     level: 1000,
                     max_level: 3000,
@@ -217,7 +217,7 @@ mod tests {
 
         printer.calc_and_update_toners_level_percent();
 
-        assert_eq!(printer.toners.black_toner.level_percent, Some(80));
+        assert_eq!(printer.toners.black_toner.unwrap().level_percent, Some(80));
         assert_eq!(printer.toners.cyan_toner.unwrap().level_percent, Some(33));
         assert_eq!(
             printer.toners.magenta_toner.unwrap().level_percent,
@@ -231,11 +231,11 @@ mod tests {
         let mut printer = Printer::new(
             String::from("OKI B431"),
             Toners {
-                black_toner: Toner {
+                black_toner: Some(Toner {
                     level: 2800,
                     max_level: 3500,
                     level_percent: None,
-                },
+                }),
                 cyan_toner: None,
                 magenta_toner: None,
                 yellow_toner: None,
