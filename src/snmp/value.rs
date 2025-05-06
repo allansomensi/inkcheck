@@ -17,7 +17,7 @@ use snmp2::{Oid, Value};
 ///
 /// ## Type Constraints:
 /// - `T`: The target type, which must implement the [FromSnmpValue] trait. This allows the conversion of the SNMP value
-///        into any type that supports this trait.
+///   into any type that supports this trait.
 pub fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
 where
     T: for<'a> FromSnmpValue<'a>,

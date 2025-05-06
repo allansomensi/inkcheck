@@ -85,7 +85,14 @@ pub fn parse_args() -> Result<AppParams, AppError> {
 
 /// Display the formatted values.
 pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: &CliTheme) {
-    println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
+    if extra_supplies {
+        if let Some(serial_number) = printer.serial_number {
+            println!("{} {}", "Printer:".bright_cyan().bold(), printer.name);
+            println!("{} {serial_number}\n", "Serial:".bright_cyan().bold());
+        }
+    } else {
+        println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
+    }
 
     println!("--> {}\n", "Toner:".bright_white().bold());
 

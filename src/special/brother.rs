@@ -62,6 +62,9 @@ pub fn get_supplies_levels(
         &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0]
     };
 
+    let serial_number_oid = &[1, 3, 6, 1, 2, 1, 43, 5, 1, 1, 17, 1];
+    let serial_number = Some(get_snmp_value(serial_number_oid, ctx)?);
+
     let bytes = get_snmp_value::<Vec<u8>>(br_info_maintenance_oid, ctx)?;
 
     let black_toner_percent = find_value_in_brother_bytes(&bytes, BLACK_TONER_CODE);
@@ -105,7 +108,14 @@ pub fn get_supplies_levels(
         yellow_drum,
     };
 
-    Ok(Printer::new(printer_name, toners, drums, fuser, None))
+    Ok(Printer::new(
+        printer_name,
+        serial_number,
+        toners,
+        drums,
+        fuser,
+        None,
+    ))
 }
 
 #[cfg(test)]
