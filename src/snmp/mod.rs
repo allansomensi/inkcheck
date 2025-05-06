@@ -126,6 +126,10 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     // OIDs
     //
 
+    // Info
+
+    let serial_number_oid = get_supply_oid(PrinterSupply::Info, None, "serial_number")?;
+
     // Toners
     let black_toner_level_oid =
         get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "level")?;
@@ -166,7 +170,17 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     let mut reservoir_level_oid: Vec<u64> = Vec::new();
     let mut reservoir_max_level_oid: Vec<u64> = Vec::new();
 
+    // Info
+
+    let mut serial_number: Option<String> = Some(String::new());
+
     if params.extra_supplies {
+        serial_number = if !serial_number_oid.is_empty() {
+            Some(get_snmp_value(&serial_number_oid, params)?)
+        } else {
+            None
+        };
+
         black_drum_level_oid =
             get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Black), "level")?;
         black_drum_max_level_oid =
@@ -316,7 +330,7 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
         yellow_drum,
     };
 
-    let mut printer = Printer::new(name.clone(), toners, drums, fuser, reservoir);
+    let mut printer = Printer::new(name.clone(), serial_number, toners, drums, fuser, reservoir);
 
     printer.calc_and_update_toners_level_percent();
     printer.calc_and_update_drums_level_percent();

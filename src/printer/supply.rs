@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 
 /// Represents the different types of supplies.
 pub enum PrinterSupply {
+    Info,
     Toner,
     Drum,
     Fuser,
@@ -12,6 +13,7 @@ pub enum PrinterSupply {
 impl Display for PrinterSupply {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::Info => write!(f, "Info"),
             Self::Toner => write!(f, "Toner"),
             Self::Drum => write!(f, "Drum"),
             Self::Fuser => write!(f, "Fuser"),

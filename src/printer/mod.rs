@@ -10,6 +10,7 @@ pub mod supply;
 /// It also includes the maximum toner levels and the percentage of toner remaining for each color.
 pub struct Printer {
     pub name: String,
+    pub serial_number: Option<String>,
     pub toners: Toners,
     pub drums: Drums,
     pub fuser: Option<Fuser>,
@@ -19,6 +20,7 @@ pub struct Printer {
 impl Printer {
     pub fn new(
         name: String,
+        serial_number: Option<String>,
         toners: Toners,
         drums: Drums,
         fuser: Option<Fuser>,
@@ -26,6 +28,7 @@ impl Printer {
     ) -> Self {
         Self {
             name,
+            serial_number,
             toners,
             drums,
             fuser,
@@ -183,6 +186,7 @@ mod tests {
     fn test_calc_and_update_toner_level_percent() {
         let mut printer = Printer::new(
             String::from("OKI B431"),
+            Some(String::from("G0J671679")),
             Toners {
                 black_toner: Some(Toner {
                     level: 2800,
@@ -230,6 +234,7 @@ mod tests {
     fn test_calc_and_update_drum_level_percent() {
         let mut printer = Printer::new(
             String::from("OKI B431"),
+            Some(String::from("G0J671679")),
             Toners {
                 black_toner: Some(Toner {
                     level: 2800,
