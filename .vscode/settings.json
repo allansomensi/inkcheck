@@ -3,5 +3,6 @@
         "printer": "content",
         "snmp": "connection",
         "special": "custom",
+        "driver": "controller"
     }
 }

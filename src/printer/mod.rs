@@ -1,5 +1,6 @@
 use supply::{Drums, Fuser, Reservoir, Toners};
 
+pub mod driver;
 pub mod load;
 pub mod supply;
 

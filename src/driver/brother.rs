@@ -1,6 +1,7 @@
 use crate::{
     error::AppError,
     printer::{
+        driver::PrinterDriver,
         supply::{Drum, Drums, Fuser, Toner, Toners},
         Printer,
     },
@@ -45,16 +46,34 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
     None
 }
 
-/// This function retrieves toner levels for a Brother printer and returns a [Printer] object.
+/// Implementation of the specific driver for `Brother` printers.
+pub struct BrotherDriver;
+
+impl PrinterDriver for BrotherDriver {
+    fn is_compatible(&self, printer_name: &str) -> bool {
+        printer_name.to_lowercase().contains("brother")
+    }
+
+    fn get_supplies(
+        &self,
+        params: &SnmpClientParams,
+        printer_name: &str,
+    ) -> Result<Printer, AppError> {
+        get_brother_supplies_levels(params, printer_name.to_string())
+    }
+}
+
+/// This function retrieves toner levels for a Brother printer and returns a [`Printer`] object.
 ///
 /// It attempts to read the toner levels for black, cyan, magenta, and yellow toners. If any toner
-/// is not found, it will be returned as [None] in the [Printer] struct.
+/// is not found, it will be returned as [None] in the [`Printer`] struct.
 /// If the black toner is not found, an error is returned.
-pub fn get_supplies_levels(
+fn get_brother_supplies_levels(
     ctx: &SnmpClientParams,
     printer_name: String,
-    old_model: bool,
 ) -> Result<Printer, AppError> {
+    let old_model = printer_name.contains("HL-5350DN");
+
     // This OID stores most of the supply information in hexadecimal format
     let br_info_maintenance_oid = if old_model {
         &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 11, 0] // brInfoNextCare
