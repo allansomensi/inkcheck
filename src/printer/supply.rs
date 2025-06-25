@@ -22,7 +22,7 @@ impl Display for PrinterSupply {
     }
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Toners {
     pub black_toner: Option<Toner>,
     pub cyan_toner: Option<Toner>,
@@ -83,7 +83,7 @@ impl Drum {
     }
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Drums {
     pub black_drum: Option<Drum>,
     pub cyan_drum: Option<Drum>,
@@ -113,4 +113,14 @@ pub struct Reservoir {
     pub level: i64,
     pub max_level: i64,
     pub level_percent: Option<i64>,
+}
+
+impl Reservoir {
+    pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
+        Self {
+            level,
+            max_level,
+            level_percent,
+        }
+    }
 }
