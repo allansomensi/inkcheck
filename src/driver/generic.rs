@@ -9,9 +9,63 @@ use crate::{
     snmp::{value::get_snmp_value, SnmpClientParams},
     utils::parse_oid_to_vec,
 };
+use serde_json::Value;
 
 /// Implementation of the generic driver.
 pub struct GenericDriver;
+
+/// Fetches a specific supply component (like a Toner or Drum) if its OIDs are defined.
+///
+/// This generic function abstracts the repetitive logic of:
+/// 1. Looking up 'level' and 'max_level' OIDs.
+/// 2. Fetching their values via SNMP if they exist.
+/// 3. Constructing the final supply struct (Toner, Drum, Fuser, etc.).
+///
+/// ## Arguments
+/// * `oids`: The loaded JSON value with all OID mappings.
+/// * `params`: SNMP client parameters.
+/// * `supply_type`: The category of the supply (e.g., PrinterSupply::Toner).
+/// * `color`: An optional color for the supply.
+/// * `constructor`: A closure that takes `level` and `max_level` and returns a new supply struct.
+///
+/// ## Returns
+/// An `Option` containing the constructed supply struct if successful, or `None`.
+fn fetch_supply<T>(
+    oids: &Value,
+    params: &SnmpClientParams,
+    supply_type: PrinterSupply,
+    color: Option<TonerColor>,
+    constructor: impl Fn(i64, i64) -> T,
+) -> Result<Option<T>, AppError> {
+    let get_supply_oid = |key: &str| -> Result<Vec<u64>, AppError> {
+        let oid_str = if let Some(c) = &color {
+            oids.get(supply_type.to_string().to_lowercase())
+                .and_then(|t| t.get(c.to_string().to_lowercase()))
+                .and_then(|b| b.get(key))
+                .and_then(|l| l.as_str())
+        } else {
+            oids.get(supply_type.to_string().to_lowercase())
+                .and_then(|b| b.get(key))
+                .and_then(|l| l.as_str())
+        };
+
+        match oid_str {
+            Some(s) if !s.is_empty() => parse_oid_to_vec(s),
+            _ => Ok(Vec::new()),
+        }
+    };
+
+    let level_oid = get_supply_oid("level")?;
+    let max_level_oid = get_supply_oid("max_level")?;
+
+    if !level_oid.is_empty() && !max_level_oid.is_empty() {
+        let level = get_snmp_value(&level_oid, params)?;
+        let max_level = get_snmp_value(&max_level_oid, params)?;
+        Ok(Some(constructor(level, max_level)))
+    } else {
+        Ok(None)
+    }
+}
 
 impl PrinterDriver for GenericDriver {
     fn is_compatible(&self, _printer_name: &str) -> bool {
@@ -39,7 +93,6 @@ impl PrinterDriver for GenericDriver {
         params: &SnmpClientParams,
         printer_name: &str,
     ) -> Result<Printer, AppError> {
-        // A lógica que antes estava em `snmp::get_printer_values` agora vive aqui.
         let brand = printer_name
             .split_whitespace()
             .next()
@@ -47,248 +100,95 @@ impl PrinterDriver for GenericDriver {
 
         let oids = load_printer(brand, printer_name, params.data_dir.clone())?;
 
-        // Function to retrieve the OID for a specific printer supply and color.
-        // It constructs the key based on the supply type and color, and then looks for the
-        // specified OID key within the OID mappings.
-        //
-        // ## Parameters:
-        // - `supply`: The type of supply to search for.
-        // - `color`: The color of the toner.
-        // - `key`: The specific key to retrieve.
-        //
-        // ## Returns:
-        // A Result containing the parsed OID as a `Vec<u64>` if found, or an `OidNotFound` error if not found.
-        let get_supply_oid = |supply: PrinterSupply, color: Option<TonerColor>, key: &str| {
-            if color.is_some() {
-                oids.get(supply.to_string().to_lowercase())
-                    .and_then(|t| t.get(color.unwrap().to_string().to_lowercase()))
-                    .and_then(|b| b.get(key))
-                    .and_then(|l| l.as_str())
-                    .map(parse_oid_to_vec)
-                    .ok_or_else(|| AppError::OidNotFound)?
-            } else {
-                oids.get(supply.to_string().to_lowercase())
-                    .and_then(|b| b.get(key))
-                    .and_then(|l| l.as_str())
-                    .map(parse_oid_to_vec)
-                    .ok_or_else(|| AppError::OidNotFound)?
-            }
+        let toners = Toners {
+            black_toner: fetch_supply(
+                &oids,
+                params,
+                PrinterSupply::Toner,
+                Some(TonerColor::Black),
+                |l, m| Toner::new(l, m, None),
+            )?,
+            cyan_toner: fetch_supply(
+                &oids,
+                params,
+                PrinterSupply::Toner,
+                Some(TonerColor::Cyan),
+                |l, m| Toner::new(l, m, None),
+            )?,
+            magenta_toner: fetch_supply(
+                &oids,
+                params,
+                PrinterSupply::Toner,
+                Some(TonerColor::Magenta),
+                |l, m| Toner::new(l, m, None),
+            )?,
+            yellow_toner: fetch_supply(
+                &oids,
+                params,
+                PrinterSupply::Toner,
+                Some(TonerColor::Yellow),
+                |l, m| Toner::new(l, m, None),
+            )?,
         };
 
-        //
-        // OIDs
-        //
-
-        // Info
-
-        let serial_number_oid = get_supply_oid(PrinterSupply::Info, None, "serial_number")?;
-
-        // Toners
-        let black_toner_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "level")?;
-        let black_toner_max_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Black), "max_level")?;
-
-        let cyan_toner_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "level")?;
-        let cyan_toner_max_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Cyan), "max_level")?;
-
-        let magenta_toner_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "level")?;
-        let magenta_toner_max_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Magenta), "max_level")?;
-
-        let yellow_toner_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "level")?;
-        let yellow_toner_max_level_oid =
-            get_supply_oid(PrinterSupply::Toner, Some(TonerColor::Yellow), "max_level")?;
-
-        // Drums
-
-        let mut black_drum_level_oid: Vec<u64> = Vec::new();
-        let mut black_drum_max_level_oid: Vec<u64> = Vec::new();
-
-        let mut cyan_drum_level_oid: Vec<u64> = Vec::new();
-        let mut cyan_drum_max_level_oid: Vec<u64> = Vec::new();
-
-        let mut magenta_drum_level_oid: Vec<u64> = Vec::new();
-        let mut magenta_drum_max_level_oid: Vec<u64> = Vec::new();
-
-        let mut yellow_drum_level_oid: Vec<u64> = Vec::new();
-        let mut yellow_drum_max_level_oid: Vec<u64> = Vec::new();
-
-        let mut fuser_level_oid: Vec<u64> = Vec::new();
-        let mut fuser_max_level_oid: Vec<u64> = Vec::new();
-
-        let mut reservoir_level_oid: Vec<u64> = Vec::new();
-        let mut reservoir_max_level_oid: Vec<u64> = Vec::new();
-
-        // Info
-
-        let mut serial_number: Option<String> = Some(String::new());
+        let mut drums = Drums::default();
+        let mut fuser: Option<Fuser> = None;
+        let mut reservoir: Option<Reservoir> = None;
+        let mut serial_number: Option<String> = None;
 
         if params.extra_supplies {
-            serial_number = if !serial_number_oid.is_empty() {
-                Some(get_snmp_value(&serial_number_oid, params)?)
-            } else {
-                None
+            serial_number = fetch_supply(&oids, params, PrinterSupply::Info, None, |_, _| {
+                String::new()
+            })?
+            .map(|_| {
+                get_snmp_value(
+                    &parse_oid_to_vec(oids["info"]["serial_number"].as_str().unwrap_or_default())?,
+                    params,
+                )
+            })
+            .transpose()?;
+
+            drums = Drums {
+                black_drum: fetch_supply(
+                    &oids,
+                    params,
+                    PrinterSupply::Drum,
+                    Some(TonerColor::Black),
+                    |l, m| Drum::new(l, m, None),
+                )?,
+                cyan_drum: fetch_supply(
+                    &oids,
+                    params,
+                    PrinterSupply::Drum,
+                    Some(TonerColor::Cyan),
+                    |l, m| Drum::new(l, m, None),
+                )?,
+                magenta_drum: fetch_supply(
+                    &oids,
+                    params,
+                    PrinterSupply::Drum,
+                    Some(TonerColor::Magenta),
+                    |l, m| Drum::new(l, m, None),
+                )?,
+                yellow_drum: fetch_supply(
+                    &oids,
+                    params,
+                    PrinterSupply::Drum,
+                    Some(TonerColor::Yellow),
+                    |l, m| Drum::new(l, m, None),
+                )?,
             };
 
-            black_drum_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Black), "level")?;
-            black_drum_max_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Black), "max_level")?;
-
-            cyan_drum_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Cyan), "level")?;
-            cyan_drum_max_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Cyan), "max_level")?;
-
-            magenta_drum_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Magenta), "level")?;
-            magenta_drum_max_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Magenta), "max_level")?;
-
-            yellow_drum_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Yellow), "level")?;
-            yellow_drum_max_level_oid =
-                get_supply_oid(PrinterSupply::Drum, Some(TonerColor::Yellow), "max_level")?;
-
-            fuser_level_oid = get_supply_oid(PrinterSupply::Fuser, None, "level")?;
-            fuser_max_level_oid = get_supply_oid(PrinterSupply::Fuser, None, "max_level")?;
-
-            reservoir_level_oid = get_supply_oid(PrinterSupply::Reservoir, None, "level")?;
-            reservoir_max_level_oid = get_supply_oid(PrinterSupply::Reservoir, None, "max_level")?;
+            fuser = fetch_supply(&oids, params, PrinterSupply::Fuser, None, |l, m| {
+                Fuser::new(l, m, None)
+            })?;
+            reservoir = fetch_supply(&oids, params, PrinterSupply::Reservoir, None, |l, m| {
+                Reservoir::new(l, m, None)
+            })?;
         }
 
-        //
-        // Values
-        //
-
-        let black_toner =
-            if !black_toner_level_oid.is_empty() && !black_toner_max_level_oid.is_empty() {
-                Some(Toner {
-                    level: get_snmp_value(&black_toner_level_oid, params)?,
-                    max_level: get_snmp_value(&black_toner_max_level_oid, params)?,
-                    level_percent: None,
-                })
-            } else {
-                None
-            };
-
-        let cyan_toner = if !cyan_toner_level_oid.is_empty() && !cyan_toner_max_level_oid.is_empty()
-        {
-            Some(Toner {
-                level: get_snmp_value(&cyan_toner_level_oid, params)?,
-                max_level: get_snmp_value(&cyan_toner_max_level_oid, params)?,
-                level_percent: None,
-            })
-        } else {
-            None
-        };
-
-        let magenta_toner =
-            if !magenta_toner_level_oid.is_empty() && !magenta_toner_max_level_oid.is_empty() {
-                Some(Toner {
-                    level: get_snmp_value(&magenta_toner_level_oid, params)?,
-                    max_level: get_snmp_value(&magenta_toner_max_level_oid, params)?,
-                    level_percent: None,
-                })
-            } else {
-                None
-            };
-
-        let yellow_toner =
-            if !yellow_toner_level_oid.is_empty() && !yellow_toner_max_level_oid.is_empty() {
-                Some(Toner {
-                    level: get_snmp_value(&yellow_toner_level_oid, params)?,
-                    max_level: get_snmp_value(&yellow_toner_max_level_oid, params)?,
-                    level_percent: None,
-                })
-            } else {
-                None
-            };
-
-        let black_drum = if !black_drum_level_oid.is_empty() && !black_drum_max_level_oid.is_empty()
-        {
-            Some(Drum {
-                level: get_snmp_value(&black_drum_level_oid, params)?,
-                max_level: get_snmp_value(&black_drum_max_level_oid, params)?,
-                level_percent: None,
-            })
-        } else {
-            None
-        };
-
-        let cyan_drum = if !cyan_drum_level_oid.is_empty() && !cyan_drum_max_level_oid.is_empty() {
-            Some(Drum {
-                level: get_snmp_value(&cyan_drum_level_oid, params)?,
-                max_level: get_snmp_value(&cyan_drum_max_level_oid, params)?,
-                level_percent: None,
-            })
-        } else {
-            None
-        };
-
-        let magenta_drum =
-            if !magenta_drum_level_oid.is_empty() && !magenta_drum_max_level_oid.is_empty() {
-                Some(Drum {
-                    level: get_snmp_value(&magenta_drum_level_oid, params)?,
-                    max_level: get_snmp_value(&magenta_drum_max_level_oid, params)?,
-                    level_percent: None,
-                })
-            } else {
-                None
-            };
-
-        let yellow_drum =
-            if !yellow_drum_level_oid.is_empty() && !yellow_drum_max_level_oid.is_empty() {
-                Some(Drum {
-                    level: get_snmp_value(&yellow_drum_level_oid, params)?,
-                    max_level: get_snmp_value(&yellow_drum_max_level_oid, params)?,
-                    level_percent: None,
-                })
-            } else {
-                None
-            };
-
-        let fuser = if !fuser_level_oid.is_empty() && !fuser_max_level_oid.is_empty() {
-            Some(Fuser {
-                level: get_snmp_value(&fuser_level_oid, params)?,
-                max_level: get_snmp_value(&fuser_max_level_oid, params)?,
-                level_percent: None,
-            })
-        } else {
-            None
-        };
-
-        let reservoir = if !reservoir_level_oid.is_empty() && !reservoir_max_level_oid.is_empty() {
-            Some(Reservoir {
-                level: get_snmp_value(&reservoir_level_oid, params)?,
-                max_level: get_snmp_value(&reservoir_max_level_oid, params)?,
-                level_percent: None,
-            })
-        } else {
-            None
-        };
-
-        let toners = Toners {
-            black_toner,
-            cyan_toner,
-            magenta_toner,
-            yellow_toner,
-        };
-
-        let drums = Drums {
-            black_drum,
-            cyan_drum,
-            magenta_drum,
-            yellow_drum,
-        };
-
         let mut printer = Printer::new(
-            printer_name.to_string().clone(),
+            printer_name.to_string(),
             serial_number,
             toners,
             drums,
@@ -296,10 +196,7 @@ impl PrinterDriver for GenericDriver {
             reservoir,
         );
 
-        printer.calc_and_update_toners_level_percent();
-        printer.calc_and_update_drums_level_percent();
-        printer.calc_and_update_fuser_level_percent();
-        printer.calc_and_update_reservoir_level_percent();
+        printer.calculate_all_levels();
 
         Ok(printer)
     }
