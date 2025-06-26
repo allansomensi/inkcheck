@@ -137,16 +137,16 @@ impl PrinterDriver for GenericDriver {
         let mut serial_number: Option<String> = None;
 
         if params.extra_supplies {
-            serial_number = fetch_supply(&oids, params, PrinterSupply::Info, None, |_, _| {
-                String::new()
-            })?
-            .map(|_| {
-                get_snmp_value(
-                    &parse_oid_to_vec(oids["info"]["serial_number"].as_str().unwrap_or_default())?,
-                    params,
-                )
-            })
-            .transpose()?;
+            if let Some(oid_str) = oids
+                .get("info")
+                .and_then(|i| i.get("serial_number"))
+                .and_then(|s| s.as_str())
+            {
+                if !oid_str.is_empty() {
+                    let serial_oid = parse_oid_to_vec(oid_str)?;
+                    serial_number = Some(get_snmp_value::<String>(&serial_oid, params)?);
+                }
+            }
 
             drums = Drums {
                 black_drum: fetch_supply(
