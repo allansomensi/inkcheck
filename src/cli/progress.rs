@@ -1,7 +1,6 @@
 use super::theme::{get_theme_chars, CliTheme};
 use colored::ColoredString;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{thread, time::Duration};
 
 pub fn show_progress(prefix: ColoredString, level: u8, color: &str, theme: &CliTheme) {
     let theme_chars = get_theme_chars(theme);
@@ -12,14 +11,10 @@ pub fn show_progress(prefix: ColoredString, level: u8, color: &str, theme: &CliT
     pb.set_style(
         ProgressStyle::default_bar()
             .template(&template)
-            .unwrap()
+            .expect("Failed to create progress bar template")
             .progress_chars(theme_chars),
     );
 
-    for _ in 0..level {
-        thread::sleep(Duration::from_micros(10));
-        pb.inc(1);
-    }
-
+    pb.set_position(level as u64);
     pb.abandon();
 }
