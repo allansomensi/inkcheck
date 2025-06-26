@@ -1,4 +1,4 @@
-use crate::error::AppError;
+use crate::error::{AppError, ErrorKind};
 
 /// Parses a string representing an OID into a vector of `u64` values.
 ///
@@ -21,7 +21,7 @@ pub fn parse_oid_to_vec(oid: &str) -> Result<Vec<u64>, AppError> {
         .map(|segment| {
             segment
                 .parse::<u64>()
-                .map_err(|_| AppError::InvalidOidFormat)
+                .map_err(|_| AppError::new(ErrorKind::InvalidOidFormat))
         })
         .collect()
 }

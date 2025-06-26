@@ -1,5 +1,5 @@
 use super::{create_snmp_session, SnmpClientParams};
-use crate::error::AppError;
+use crate::error::{AppError, ErrorKind};
 use snmp2::{Oid, Value};
 
 /// Retrieves an SNMP value for a given OID and converts it to the specified type.
@@ -30,16 +30,16 @@ where
         }
     };
 
-    let oid = Oid::from(oid).map_err(|_| AppError::OidConversion)?;
+    let oid = Oid::from(oid).map_err(|_| AppError::new(ErrorKind::OidConversion))?;
 
     let mut response = session
         .get(&oid)
-        .map_err(|e| AppError::SnmpRequest(e.to_string()))?;
+        .map_err(|e| AppError::new(ErrorKind::SnmpRequest(e.to_string())))?;
 
     if let Some((_oid, value)) = response.varbinds.next() {
         Ok(T::from_snmp_value(&value)?)
     } else {
-        Err(AppError::OidNotFound)
+        Err(AppError::new(ErrorKind::OidNotFound))
     }
 }
 
@@ -69,9 +69,9 @@ impl<'a> FromSnmpValue<'a> for i64 {
         if let Value::Integer(v) = value {
             Ok(*v)
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected Integer, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -81,9 +81,9 @@ impl<'a> FromSnmpValue<'a> for String {
         if let Value::OctetString(v) = value {
             Ok(String::from_utf8_lossy(v).to_string())
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected OctetString, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -95,14 +95,15 @@ impl<'a> FromSnmpValue<'a> for Vec<u64> {
             oid_string
                 .split('.')
                 .map(|s| {
-                    s.parse::<u64>()
-                        .map_err(|_| AppError::ParseError(format!("Failed to parse '{s}' as u64")))
+                    s.parse::<u64>().map_err(|_| {
+                        AppError::new(ErrorKind::Parse(format!("Failed to parse '{s}' as u64")))
+                    })
                 })
                 .collect()
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected ObjectIdentifier, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -112,9 +113,9 @@ impl<'a> FromSnmpValue<'a> for Vec<u8> {
         if let Value::OctetString(v) = value {
             Ok(v.to_vec())
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected OctetString, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -123,10 +124,10 @@ impl<'a> FromSnmpValue<'a> for u32 {
     fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
         match value {
             Value::Unsigned32(v) | Value::Counter32(v) | Value::Timeticks(v) => Ok(*v),
-            _ => Err(AppError::TypeMismatch(
+            _ => Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected Unsigned32, Counter32, or Timeticks, but received a different type"
                     .to_string(),
-            )),
+            ))),
         }
     }
 }
@@ -136,9 +137,9 @@ impl<'a> FromSnmpValue<'a> for u64 {
         if let Value::Counter64(v) = value {
             Ok(*v)
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected Counter64, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -148,9 +149,9 @@ impl<'a> FromSnmpValue<'a> for bool {
         if let Value::Boolean(v) = value {
             Ok(*v)
         } else {
-            Err(AppError::TypeMismatch(
+            Err(AppError::new(ErrorKind::TypeMismatch(
                 "Expected Boolean, but received a different type".to_string(),
-            ))
+            )))
         }
     }
 }

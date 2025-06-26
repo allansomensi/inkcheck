@@ -1,5 +1,5 @@
 use crate::{
-    error::AppError,
+    error::{AppError, ErrorKind},
     printer::{driver::DriverManager, Printer},
 };
 use snmp2::SyncSession;
@@ -45,7 +45,7 @@ pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppErr
         SnmpVersion::V2c => {
             SyncSession::new_v2c(agent_address, community, Some(timeout), 0).map_err(AppError::from)
         }
-        SnmpVersion::V3 => Err(AppError::UnsupportedVersion),
+        SnmpVersion::V3 => Err(AppError::new(ErrorKind::UnsupportedVersion)),
     }
 }
 
@@ -79,6 +79,6 @@ pub fn get_printer_values(params: &SnmpClientParams) -> Result<Printer, AppError
     if let Some(driver) = driver_manager.get_driver(&printer_name) {
         driver.get_supplies(params, &printer_name)
     } else {
-        Err(AppError::UnsupportedPrinter(printer_name))
+        Err(AppError::new(ErrorKind::UnsupportedPrinter(printer_name)))
     }
 }
