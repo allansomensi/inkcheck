@@ -1,5 +1,5 @@
 use crate::{
-    error::AppError,
+    error::{AppError, ErrorKind},
     printer::{
         driver::PrinterDriver,
         load::load_printer,
@@ -93,10 +93,11 @@ impl PrinterDriver for GenericDriver {
         params: &SnmpClientParams,
         printer_name: &str,
     ) -> Result<Printer, AppError> {
-        let brand = printer_name
-            .split_whitespace()
-            .next()
-            .ok_or_else(|| AppError::ParseError("Could not determine printer brand".to_string()))?;
+        let brand = printer_name.split_whitespace().next().ok_or_else(|| {
+            AppError::new(ErrorKind::Parse(
+                "Could not determine printer brand".to_string(),
+            ))
+        })?;
 
         let oids = load_printer(brand, printer_name, params.data_dir.clone())?;
 

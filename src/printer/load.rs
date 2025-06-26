@@ -1,4 +1,4 @@
-use crate::error::AppError;
+use crate::error::{AppError, ErrorKind};
 use include_dir::{include_dir, Dir};
 use serde_json::Value;
 use std::{fs, path::PathBuf};
@@ -24,12 +24,12 @@ pub fn load_printer(
     };
 
     if data_dir.is_some() && !search_dir.is_dir() {
-        return Err(AppError::InvalidDirectory);
+        return Err(AppError::new(ErrorKind::InvalidDirectory));
     }
 
     if data_dir.is_some() {
         fs::read_dir(&search_dir)
-            .map_err(|_| AppError::DirectoryReadError)?
+            .map_err(|_| AppError::new(ErrorKind::DirectoryRead))?
             .filter_map(Result::ok)
             .find(|entry| {
                 entry.path().extension().and_then(|ext| ext.to_str()) == Some("json")
@@ -43,7 +43,7 @@ pub fn load_printer(
             .and_then(|entry| fs::read_to_string(entry.path()).ok())
             .and_then(|json_str| serde_json::from_str::<Value>(&json_str).ok())
             .and_then(|json| json.get(model).cloned())
-            .ok_or_else(|| AppError::UnsupportedPrinter(model.to_string()))
+            .ok_or_else(|| AppError::new(ErrorKind::UnsupportedPrinter(model.to_string())))
     } else {
         INTERNAL_DATA_DIR
             .files()
@@ -59,6 +59,6 @@ pub fn load_printer(
             .and_then(|file| file.contents_utf8())
             .and_then(|json_str| serde_json::from_str::<Value>(json_str).ok())
             .and_then(|json| json.get(model).cloned())
-            .ok_or_else(|| AppError::UnsupportedPrinter(model.to_string()))
+            .ok_or_else(|| AppError::new(ErrorKind::UnsupportedPrinter(model.to_string())))
     }
 }
