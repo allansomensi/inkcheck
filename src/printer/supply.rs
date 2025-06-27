@@ -20,6 +20,10 @@ impl Display for PrinterSupply {
     }
 }
 
+pub trait CalculateLevel {
+    fn calculate_level_percent(&mut self);
+}
+
 #[derive(Default, Clone)]
 pub struct Toners {
     pub black_toner: Option<Toner>,
@@ -41,6 +45,18 @@ impl Toner {
             level,
             max_level,
             level_percent,
+        }
+    }
+}
+
+impl CalculateLevel for Option<Toner> {
+    fn calculate_level_percent(&mut self) {
+        if let Some(toner) = self {
+            if toner.max_level > 0 {
+                toner.level_percent = Some((toner.level * 100) / toner.max_level);
+            } else {
+                toner.level_percent = None;
+            }
         }
     }
 }
@@ -89,6 +105,18 @@ pub struct Drums {
     pub yellow_drum: Option<Drum>,
 }
 
+impl CalculateLevel for Option<Drum> {
+    fn calculate_level_percent(&mut self) {
+        if let Some(drum) = self {
+            if drum.max_level > 0 {
+                drum.level_percent = Some((drum.level * 100) / drum.max_level);
+            } else {
+                drum.level_percent = None;
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Fuser {
     pub level: i64,
@@ -106,6 +134,18 @@ impl Fuser {
     }
 }
 
+impl CalculateLevel for Option<Fuser> {
+    fn calculate_level_percent(&mut self) {
+        if let Some(fuser) = self {
+            if fuser.max_level > 0 {
+                fuser.level_percent = Some((fuser.level * 100) / fuser.max_level);
+            } else {
+                fuser.level_percent = None;
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Reservoir {
     pub level: i64,
@@ -119,6 +159,18 @@ impl Reservoir {
             level,
             max_level,
             level_percent,
+        }
+    }
+}
+
+impl CalculateLevel for Option<Reservoir> {
+    fn calculate_level_percent(&mut self) {
+        if let Some(reservoir) = self {
+            if reservoir.max_level > 0 {
+                reservoir.level_percent = Some((reservoir.level * 100) / reservoir.max_level);
+            } else {
+                reservoir.level_percent = None;
+            }
         }
     }
 }
