@@ -1,3 +1,4 @@
+use crate::printer::supply::CalculateLevel;
 use supply::{Drums, Fuser, Reservoir, Toners};
 
 pub mod driver;
@@ -38,147 +39,21 @@ impl Printer {
     }
 
     pub fn calculate_all_levels(&mut self) {
-        self.calc_and_update_toners_level_percent();
-        self.calc_and_update_drums_level_percent();
-        self.calc_and_update_fuser_level_percent();
-        self.calc_and_update_reservoir_level_percent();
-    }
+        // Calculate Toners
+        self.toners.black_toner.calculate_level_percent();
+        self.toners.cyan_toner.calculate_level_percent();
+        self.toners.magenta_toner.calculate_level_percent();
+        self.toners.yellow_toner.calculate_level_percent();
 
-    /// Calculates and updates the toner level percentage for each toner color in the struct.
-    ///
-    /// This function computes the percentage of toner remaining for each color (black, cyan, magenta, and yellow)
-    /// by dividing the current toner level by the maximum toner level and multiplying by 100.
-    /// If the maximum toner level is zero, the function safely sets the corresponding toner percentage to `None`
-    /// to avoid division by zero.
-    ///
-    /// The calculated percentage is assigned directly to the `level_percent` field of the respective toner color
-    /// within the struct.
-    pub fn calc_and_update_toners_level_percent(&mut self) {
-        let calculate_level_percent = |level: i64, max_level: i64| {
-            if max_level == 0 {
-                None
-            } else {
-                Some(
-                    (level * 100)
-                        .checked_div(max_level)
-                        .expect("Error calculating toner level"),
-                )
-            }
-        };
+        // Calculate Drums
+        self.drums.black_drum.calculate_level_percent();
+        self.drums.cyan_drum.calculate_level_percent();
+        self.drums.magenta_drum.calculate_level_percent();
+        self.drums.yellow_drum.calculate_level_percent();
 
-        if let Some(black_toner) = &mut self.toners.black_toner {
-            black_toner.level_percent =
-                calculate_level_percent(black_toner.level, black_toner.max_level);
-        }
-
-        if let Some(cyan_toner) = &mut self.toners.cyan_toner {
-            cyan_toner.level_percent =
-                calculate_level_percent(cyan_toner.level, cyan_toner.max_level);
-        }
-
-        if let Some(magenta_toner) = &mut self.toners.magenta_toner {
-            magenta_toner.level_percent =
-                calculate_level_percent(magenta_toner.level, magenta_toner.max_level);
-        }
-
-        if let Some(yellow_toner) = &mut self.toners.yellow_toner {
-            yellow_toner.level_percent =
-                calculate_level_percent(yellow_toner.level, yellow_toner.max_level);
-        }
-    }
-
-    /// Calculates and updates the drum level percentage for each toner color in the struct.
-    ///
-    /// This function computes the percentage of drum remaining for each color (black, cyan, magenta, and yellow)
-    /// by dividing the current drum level by the maximum drum level and multiplying by 100.
-    /// If the maximum drum level is zero, the function safely sets the corresponding drum percentage to `None`
-    /// to avoid division by zero.
-    ///
-    /// The calculated percentage is assigned directly to the `level_percent` field of the respective toner color
-    /// within the struct.
-    pub fn calc_and_update_drums_level_percent(&mut self) {
-        let calculate_level_percent = |level: i64, max_level: i64| {
-            if max_level == 0 {
-                None
-            } else {
-                Some(
-                    (level * 100)
-                        .checked_div(max_level)
-                        .expect("Error calculating drum level"),
-                )
-            }
-        };
-
-        if let Some(black_drum) = &mut self.drums.black_drum {
-            black_drum.level_percent =
-                calculate_level_percent(black_drum.level, black_drum.max_level);
-        }
-
-        if let Some(cyan_drum) = &mut self.drums.cyan_drum {
-            cyan_drum.level_percent = calculate_level_percent(cyan_drum.level, cyan_drum.max_level);
-        }
-
-        if let Some(magenta_drum) = &mut self.drums.magenta_drum {
-            magenta_drum.level_percent =
-                calculate_level_percent(magenta_drum.level, magenta_drum.max_level);
-        }
-
-        if let Some(yellow_drum) = &mut self.drums.yellow_drum {
-            yellow_drum.level_percent =
-                calculate_level_percent(yellow_drum.level, yellow_drum.max_level);
-        }
-    }
-
-    /// Calculates and updates the fuser level percentage.
-    ///
-    /// This function computes the percentage of fuser remaining by dividing the current level by the maximum
-    /// level and multiplying by 100.
-    /// If the maximum fuser level is zero, the function safely sets the percentage to `None`
-    /// to avoid division by zero.
-    ///
-    /// The calculated percentage is assigned directly to the `level_percent` field.
-    pub fn calc_and_update_fuser_level_percent(&mut self) {
-        let calculate_level_percent = |level: i64, max_level: i64| {
-            if max_level == 0 {
-                None
-            } else {
-                Some(
-                    (level * 100)
-                        .checked_div(max_level)
-                        .expect("Error calculating fuser level"),
-                )
-            }
-        };
-
-        if let Some(fuser) = &mut self.fuser {
-            fuser.level_percent = calculate_level_percent(fuser.level, fuser.max_level);
-        }
-    }
-
-    /// Calculates and updates the reservoir level percentage.
-    ///
-    /// This function computes the percentage of reservoir remaining by dividing the current level by the maximum
-    /// level and multiplying by 100.
-    /// If the maximum reservoir level is zero, the function safely sets the percentage to `None`
-    /// to avoid division by zero.
-    ///
-    /// The calculated percentage is assigned directly to the `level_percent` field.
-    pub fn calc_and_update_reservoir_level_percent(&mut self) {
-        let calculate_level_percent = |level: i64, max_level: i64| {
-            if max_level == 0 {
-                None
-            } else {
-                Some(
-                    (level * 100)
-                        .checked_div(max_level)
-                        .expect("Error calculating reservoir level"),
-                )
-            }
-        };
-
-        if let Some(reservoir) = &mut self.reservoir {
-            reservoir.level_percent = calculate_level_percent(reservoir.level, reservoir.max_level);
-        }
+        // Calculate Other Supplies
+        self.fuser.calculate_level_percent();
+        self.reservoir.calculate_level_percent();
     }
 }
 
@@ -190,7 +65,6 @@ mod tests {
         Drums, Toners,
     };
 
-    /// Tests the constructor and field assignments for the Printer struct.
     #[test]
     fn test_printer_constructor() {
         let printer = Printer::new(
@@ -213,9 +87,8 @@ mod tests {
         assert!(printer.reservoir.is_none());
     }
 
-    /// Tests the percentage calculation for all toner colors.
     #[test]
-    fn test_calc_and_update_toner_level_percent() {
+    fn test_toner_level_calculation() {
         let mut printer = Printer::new(
             String::from("Toner Test Printer"),
             None,
@@ -230,7 +103,7 @@ mod tests {
             None,
         );
 
-        printer.calc_and_update_toners_level_percent();
+        printer.calculate_all_levels();
 
         assert_eq!(printer.toners.black_toner.unwrap().level_percent, Some(80));
         assert_eq!(printer.toners.cyan_toner.unwrap().level_percent, Some(33));
@@ -241,9 +114,8 @@ mod tests {
         assert_eq!(printer.toners.yellow_toner.unwrap().level_percent, Some(10));
     }
 
-    /// Tests the percentage calculation for all drum units.
     #[test]
-    fn test_calc_and_update_drum_level_percent() {
+    fn test_drum_level_calculation() {
         let mut printer = Printer::new(
             String::from("Drum Test Printer"),
             None,
@@ -258,7 +130,7 @@ mod tests {
             None,
         );
 
-        printer.calc_and_update_drums_level_percent();
+        printer.calculate_all_levels();
 
         assert_eq!(printer.drums.black_drum.unwrap().level_percent, Some(80));
         assert_eq!(printer.drums.cyan_drum.unwrap().level_percent, Some(33));
@@ -266,9 +138,8 @@ mod tests {
         assert_eq!(printer.drums.yellow_drum.unwrap().level_percent, Some(10));
     }
 
-    /// Tests the percentage calculation for the fuser unit.
     #[test]
-    fn test_calc_and_update_fuser_level_percent() {
+    fn test_fuser_level_calculation() {
         let mut printer = Printer::new(
             String::from("Fuser Test Printer"),
             None,
@@ -278,13 +149,13 @@ mod tests {
             None,
         );
 
-        printer.calc_and_update_fuser_level_percent();
+        printer.calculate_all_levels();
+
         assert_eq!(printer.fuser.unwrap().level_percent, Some(75));
     }
 
-    /// Tests the percentage calculation for the waste toner reservoir.
     #[test]
-    fn test_calc_and_update_reservoir_level_percent() {
+    fn test_reservoir_level_calculation() {
         let mut printer = Printer::new(
             String::from("Reservoir Test Printer"),
             None,
@@ -294,32 +165,13 @@ mod tests {
             Some(Reservoir::new(40, 50, None)),
         );
 
-        printer.calc_and_update_reservoir_level_percent();
+        printer.calculate_all_levels();
+
         assert_eq!(printer.reservoir.unwrap().level_percent, Some(80));
     }
 
-    /// Tests that percentage calculation handles a max_level of zero gracefully, returning None.
     #[test]
-    fn test_calculation_with_zero_max_level() {
-        let mut printer = Printer::new(
-            String::from("Edge Case Printer"),
-            None,
-            Toners {
-                black_toner: Some(Toner::new(0, 0, None)), // Division by zero case
-                ..Default::default()
-            },
-            Drums::default(),
-            None,
-            None,
-        );
-
-        printer.calc_and_update_toners_level_percent();
-        assert_eq!(printer.toners.black_toner.unwrap().level_percent, None);
-    }
-
-    /// Tests the master method `calculate_all_levels` to ensure it calls all individual calculation methods.
-    #[test]
-    fn test_calculate_all_levels_integration() {
+    fn test_calculate_all_levels() {
         let mut printer = Printer::new(
             String::from("Comprehensive Test"),
             None,
