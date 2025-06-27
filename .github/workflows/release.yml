@@ -8,16 +8,17 @@ jobs:
   build-and-upload:
     name: Build and Upload
 
+    permissions:
+      contents: write
+
     strategy:
       matrix:
         include:
-          # --- Windows ---
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             asset_name_suffix: x86_64-windows.zip
             binary_name: inkcheck.exe
 
-          # --- macOS ---
           - target: x86_64-apple-darwin
             os: macos-latest
             asset_name_suffix: x86_64-apple-darwin.tar.gz
@@ -28,7 +29,6 @@ jobs:
             asset_name_suffix: aarch64-apple-darwin.tar.gz
             binary_name: inkcheck
 
-          # --- Linux ---
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             asset_name_suffix: x86_64-linux-gnu.tar.gz
@@ -60,26 +60,24 @@ jobs:
       - name: Package release assets
         shell: bash
         run: |
-          BINARY_PATH="target/${{ matrix.target }}/release/${{ matrix.binary_name }}"
+          SOURCE_DIR="target/${{ matrix.target }}/release"
 
           mkdir -p release
 
           ASSET_NAME="inkcheck-${{ github.ref_name }}-${{ matrix.asset_name_suffix }}"
+          ASSET_PATH="release/${ASSET_NAME}"
 
           if [ "${{ runner.os }}" == "Windows" ]; then
-            7z a "release/${ASSET_NAME}" "${BINARY_PATH}"
+            (cd "${SOURCE_DIR}" && 7z a "../../../${ASSET_PATH}" "${{ matrix.binary_name }}")
           else
-            tar -czf "release/${ASSET_NAME}" -C "target/${{ matrix.target }}/release" "${{ matrix.binary_name }}"
+            tar -czf "${ASSET_PATH}" -C "${SOURCE_DIR}" "${{ matrix.binary_name }}"
           fi
 
-          echo "ASSET_PATH=release/${ASSET_NAME}" >> $GITHUB_ENV
+          echo "ASSET_PATH=${ASSET_PATH}" >> $GITHUB_ENV
+          echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_ENV
 
       - name: Upload release asset
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.ASSET_PATH }}
-          asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/octet-stream
+        shell: bash
+        run: gh release upload "${{ github.ref_name }}" "${{ env.ASSET_PATH }}"
