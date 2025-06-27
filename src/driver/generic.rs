@@ -3,7 +3,13 @@ use crate::{
     printer::{
         driver::PrinterDriver,
         load::load_printer,
-        supply::{Drum, Drums, Fuser, PrinterSupply, Reservoir, Toner, TonerColor, Toners},
+        supply::{
+            drum::{Drum, Drums},
+            fuser::Fuser,
+            reservoir::Reservoir,
+            toner::{Toner, TonerColor, Toners},
+            PrinterSupply,
+        },
         Printer,
     },
     snmp::{value::get_snmp_value, SnmpClientParams},

@@ -1,4 +1,5 @@
 use crate::{
+    cli::output::OutputFormat,
     error::AppError,
     printer::Printer,
     snmp::{version::SnmpVersion, SnmpClientParams},
@@ -9,6 +10,7 @@ use progress::show_progress;
 use std::{net::Ipv4Addr, path::PathBuf};
 use theme::CliTheme;
 
+mod output;
 mod progress;
 mod theme;
 
@@ -26,6 +28,7 @@ pub struct AppParams {
 /// This structure defines the settings specific to the CLI, such as the theme to be used.
 pub struct CliParams {
     pub theme: CliTheme,
+    pub output: OutputFormat,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -61,6 +64,10 @@ pub struct Args {
     /// Cli theme
     #[arg(long, default_value_t = CliTheme::Solid)]
     theme: CliTheme,
+
+    /// Output format
+    #[arg(long, short, default_value_t = OutputFormat::Text)]
+    output: OutputFormat,
 }
 
 /// Capture and return the command line arguments.
@@ -68,7 +75,10 @@ pub fn parse_args() -> Result<AppParams, AppError> {
     let args = Args::parse();
 
     let params = AppParams {
-        app: CliParams { theme: args.theme },
+        app: CliParams {
+            theme: args.theme,
+            output: args.output,
+        },
         snmp: SnmpClientParams {
             ip: args.ip,
             port: args.port,
@@ -84,104 +94,118 @@ pub fn parse_args() -> Result<AppParams, AppError> {
 }
 
 /// Display the formatted values.
-pub fn show_printer_values(printer: Printer, extra_supplies: bool, theme: &CliTheme) {
-    if extra_supplies {
-        if let Some(serial_number) = printer.serial_number {
-            println!("{} {}", "Printer:".bright_cyan().bold(), printer.name);
-            println!("{} {serial_number}\n", "Serial:".bright_cyan().bold());
+pub fn show_printer_values(
+    printer: Printer,
+    extra_supplies: bool,
+    theme: &CliTheme,
+    output: &OutputFormat,
+) {
+    match output {
+        OutputFormat::Json => match serde_json::to_string_pretty(&printer) {
+            Ok(json) => println!("{json}"),
+            Err(e) => eprintln!("Error generating JSON output: {e}"),
+        },
+
+        OutputFormat::Text => {
+            if extra_supplies {
+                if let Some(serial_number) = printer.serial_number {
+                    println!("{} {}", "Printer:".bright_cyan().bold(), printer.name);
+                    println!("{} {serial_number}\n", "Serial:".bright_cyan().bold());
+                }
+            } else {
+                println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
+            }
+
+            println!("--> {}\n", "Toner:".bright_white().bold());
+
+            if let Some(level) = printer
+                .toners
+                .black_toner
+                .as_ref()
+                .and_then(|t| t.level_percent)
+            {
+                show_progress("Black".bright_white(), level as u8, "white", theme);
+            }
+
+            if let Some(level) = printer
+                .toners
+                .cyan_toner
+                .as_ref()
+                .and_then(|t| t.level_percent)
+            {
+                show_progress("Cyan".bright_cyan(), level as u8, "cyan", theme);
+            }
+
+            if let Some(level) = printer
+                .toners
+                .magenta_toner
+                .as_ref()
+                .and_then(|t| t.level_percent)
+            {
+                show_progress("Magenta".bright_magenta(), level as u8, "magenta", theme);
+            }
+
+            if let Some(level) = printer
+                .toners
+                .yellow_toner
+                .as_ref()
+                .and_then(|t| t.level_percent)
+            {
+                show_progress("Yellow".bright_yellow(), level as u8, "yellow", theme);
+            }
+
+            if extra_supplies {
+                if let Some(level) = printer
+                    .drums
+                    .black_drum
+                    .as_ref()
+                    .and_then(|t| t.level_percent)
+                {
+                    println!("\n\n--> {}\n", "Drum:".bright_white().bold());
+                    show_progress("Black".bright_white(), level as u8, "white", theme);
+                }
+
+                if let Some(level) = printer
+                    .drums
+                    .cyan_drum
+                    .as_ref()
+                    .and_then(|t| t.level_percent)
+                {
+                    show_progress("Cyan".bright_cyan(), level as u8, "cyan", theme);
+                }
+
+                if let Some(level) = printer
+                    .drums
+                    .magenta_drum
+                    .as_ref()
+                    .and_then(|t| t.level_percent)
+                {
+                    show_progress("Magenta".bright_magenta(), level as u8, "magenta", theme);
+                }
+
+                if let Some(level) = printer
+                    .drums
+                    .yellow_drum
+                    .as_ref()
+                    .and_then(|t| t.level_percent)
+                {
+                    show_progress("Yellow".bright_yellow(), level as u8, "yellow", theme);
+                }
+
+                if let Some(level) = printer.fuser.as_ref().and_then(|t| t.level_percent) {
+                    println!("\n\n--> {}\n", "Other:".bright_white().bold());
+                    show_progress("Fuser".white(), level as u8, "white", theme);
+                }
+
+                if let Some(level) = printer.reservoir.as_ref().and_then(|t| t.level_percent) {
+                    let color = if level as u8 == 100 { "green" } else { "red" };
+                    show_progress("Reservoir".white(), level as u8, color, theme);
+                }
+            }
+
+            println!();
         }
-    } else {
-        println!("{} {}\n", "Printer:".bright_cyan().bold(), printer.name);
     }
-
-    println!("--> {}\n", "Toner:".bright_white().bold());
-
-    if let Some(level) = printer
-        .toners
-        .black_toner
-        .as_ref()
-        .and_then(|t| t.level_percent)
-    {
-        show_progress("Black".bright_white(), level as u8, "white", theme);
-    }
-
-    if let Some(level) = printer
-        .toners
-        .cyan_toner
-        .as_ref()
-        .and_then(|t| t.level_percent)
-    {
-        show_progress("Cyan".bright_cyan(), level as u8, "cyan", theme);
-    }
-
-    if let Some(level) = printer
-        .toners
-        .magenta_toner
-        .as_ref()
-        .and_then(|t| t.level_percent)
-    {
-        show_progress("Magenta".bright_magenta(), level as u8, "magenta", theme);
-    }
-
-    if let Some(level) = printer
-        .toners
-        .yellow_toner
-        .as_ref()
-        .and_then(|t| t.level_percent)
-    {
-        show_progress("Yellow".bright_yellow(), level as u8, "yellow", theme);
-    }
-
-    if extra_supplies {
-        if let Some(level) = printer
-            .drums
-            .black_drum
-            .as_ref()
-            .and_then(|t| t.level_percent)
-        {
-            println!("\n\n--> {}\n", "Drum:".bright_white().bold());
-            show_progress("Black".bright_white(), level as u8, "white", theme);
-        }
-
-        if let Some(level) = printer
-            .drums
-            .cyan_drum
-            .as_ref()
-            .and_then(|t| t.level_percent)
-        {
-            show_progress("Cyan".bright_cyan(), level as u8, "cyan", theme);
-        }
-
-        if let Some(level) = printer
-            .drums
-            .magenta_drum
-            .as_ref()
-            .and_then(|t| t.level_percent)
-        {
-            show_progress("Magenta".bright_magenta(), level as u8, "magenta", theme);
-        }
-
-        if let Some(level) = printer
-            .drums
-            .yellow_drum
-            .as_ref()
-            .and_then(|t| t.level_percent)
-        {
-            show_progress("Yellow".bright_yellow(), level as u8, "yellow", theme);
-        }
-
-        if let Some(level) = printer.fuser.as_ref().and_then(|t| t.level_percent) {
-            println!("\n\n--> {}\n", "Other:".bright_white().bold());
-            show_progress("Fuser".white(), level as u8, "white", theme);
-        }
-
-        if let Some(level) = printer.reservoir.as_ref().and_then(|t| t.level_percent) {
-            let color = if level as u8 == 100 { "green" } else { "red" };
-            show_progress("Reservoir".white(), level as u8, color, theme);
-        }
-    }
-
-    println!();
 }
 
 #[cfg(test)]

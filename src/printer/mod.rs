@@ -1,5 +1,7 @@
-use crate::printer::supply::CalculateLevel;
-use supply::{Drums, Fuser, Reservoir, Toners};
+use crate::printer::supply::{
+    drum::Drums, fuser::Fuser, reservoir::Reservoir, toner::Toners, CalculateLevel,
+};
+use serde::Serialize;
 
 pub mod driver;
 pub mod load;
@@ -10,6 +12,7 @@ pub mod supply;
 /// This struct stores information about a printer, including its name, brand,
 /// model, and the current levels of the toner cartridges (Black, Cyan, Magenta, and Yellow).
 /// It also includes the maximum toner levels and the percentage of toner remaining for each color.
+#[derive(Serialize)]
 pub struct Printer {
     pub name: String,
     pub serial_number: Option<String>,
@@ -61,7 +64,7 @@ impl Printer {
 mod tests {
     use super::Printer;
     use crate::printer::{
-        supply::{Drum, Fuser, Reservoir, Toner},
+        supply::{drum::Drum, fuser::Fuser, reservoir::Reservoir, toner::Toner},
         Drums, Toners,
     };
 
