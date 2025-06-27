@@ -5,8 +5,9 @@ use std::fmt::Display;
 ///
 /// This enum defines the available themes that can be used in the CLI interface,
 /// affecting the visual presentation.
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, ValueEnum, Default)]
 pub enum CliTheme {
+    #[default]
     Solid,
     Blocks,
     Circles,
@@ -31,12 +32,6 @@ impl Display for CliTheme {
             Self::Emoji => write!(f, "emoji"),
             Self::Moon => write!(f, "moon"),
         }
-    }
-}
-
-impl Default for CliTheme {
-    fn default() -> Self {
-        Self::Solid
     }
 }
 

@@ -2,7 +2,11 @@ use crate::{
     error::AppError,
     printer::{
         driver::PrinterDriver,
-        supply::{Drum, Drums, Fuser, Toner, Toners},
+        supply::{
+            drum::{Drum, Drums},
+            fuser::Fuser,
+            toner::{Toner, Toners},
+        },
         Printer,
     },
     snmp::{value::get_snmp_value, SnmpClientParams},
