@@ -1,13 +1,16 @@
 use crate::{
     cli::output::OutputFormat,
-    error::AppError,
+    error::{AppError, ErrorKind},
     printer::Printer,
     snmp::{version::SnmpVersion, SnmpClientParams},
 };
 use clap::Parser;
 use colored::Colorize;
 use progress::show_progress;
-use std::{net::Ipv4Addr, path::PathBuf};
+use std::{
+    net::{Ipv4Addr, ToSocketAddrs},
+    path::PathBuf,
+};
 use theme::CliTheme;
 
 mod output;
@@ -34,8 +37,8 @@ pub struct CliParams {
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
 pub struct Args {
-    /// IP of the printer
-    ip: Ipv4Addr,
+    /// IP or hostname of the printer
+    host: String,
 
     /// SNMP Service Port
     #[arg(short, long, default_value_t = 161)]
@@ -74,13 +77,33 @@ pub struct Args {
 pub fn parse_args() -> Result<AppParams, AppError> {
     let args = Args::parse();
 
+    let resolved_ip = if let Ok(ip) = args.host.parse::<Ipv4Addr>() {
+        ip
+    } else {
+        let host_with_port = format!("{}:{}", args.host, args.port);
+        let mut addrs_iter = match host_with_port.to_socket_addrs() {
+            Ok(addrs) => addrs,
+            Err(_) => return Err(AppError::new(ErrorKind::DnsResolution(args.host))),
+        };
+
+        addrs_iter
+            .find_map(|socket_addr| {
+                if let std::net::IpAddr::V4(ipv4_addr) = socket_addr.ip() {
+                    Some(ipv4_addr)
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| AppError::new(ErrorKind::DnsResolution(args.host)))?
+    };
+
     let params = AppParams {
         app: CliParams {
             theme: args.theme,
             output: args.output,
         },
         snmp: SnmpClientParams {
-            ip: args.ip,
+            ip: resolved_ip,
             port: args.port,
             community: args.community,
             version: args.snmp_version,

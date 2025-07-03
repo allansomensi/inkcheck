@@ -1,7 +1,7 @@
 [package]
 name = "inkcheck"
 version = "0.1.0"
-authors = ["Allan Somensi <allansomensidev@gmail.com>"]
+authors = ["Allan Somensi <allansomensidev@proton.me>"]
 description = "A CLI tool to quickly check the status of printer supplies via the command line. Written in Rust."
 homepage = "https://github.com/allansomensi/inkcheck"
 repository = "https://github.com/allansomensi/inkcheck"

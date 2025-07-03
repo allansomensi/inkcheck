@@ -19,6 +19,8 @@ pub enum ErrorKind {
     Cli(String),
     /// An I/O error that occurred.
     Io(String),
+    /// An DNS resolution error that occurred.
+    DnsResolution(String),
     /// An error that occurs when failing to convert an OID.
     OidConversion,
     /// An error that occurs when a type conversion fails.
@@ -48,6 +50,7 @@ impl std::fmt::Display for AppError {
         match &self.kind {
             ErrorKind::Cli(s) => write!(f, "CLI error: {s}. Please check the provided arguments."),
             ErrorKind::Io(s) => write!(f, "I/O error: {s}."),
+            ErrorKind::DnsResolution(s) => write!(f, "DNS resolution failed for '{s}'."),
             ErrorKind::OidConversion => write!(f, "Failed to convert OID. Ensure the format is valid and numeric."),
             ErrorKind::TypeMismatch(s) => write!(f, "Type conversion failed: {s}."),
             ErrorKind::Parse(s) => write!(f, "Parsing error: {s}. Please check the input format."),
