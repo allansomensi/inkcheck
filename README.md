@@ -86,6 +86,7 @@ Below is a list of printers that have been tested:
 - Brother L2540
 - OKI B431
 - Xerox C8030
+- Epson WF-C5790
 
 If you've tested with another printer model, feel free to contribute by adding it to the list!
 
