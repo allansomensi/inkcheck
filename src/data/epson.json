@@ -1,0 +1,51 @@
+{
+    "EPSON WF-C5790 Series": {
+        "info": {
+            "serial_number": "1.3.6.1.2.1.43.5.1.1.17.1"
+        },
+        "toner": {
+            "black": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.1",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.1"
+            },
+            "cyan": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.2",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.2"
+            },
+            "magenta": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.3",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.3"
+            },
+            "yellow": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.4",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.4"
+            }
+        },
+        "drum": {
+            "black": {
+                "level": "",
+                "max_level": ""
+            },
+            "cyan": {
+                "level": "",
+                "max_level": ""
+            },
+            "magenta": {
+                "level": "",
+                "max_level": ""
+            },
+            "yellow": {
+                "level": "",
+                "max_level": ""
+            }
+        },
+        "fuser": {
+            "level": "",
+            "max_level": ""
+        },
+        "reservoir": {
+            "level": "",
+            "max_level": ""
+        }
+    }
+}
