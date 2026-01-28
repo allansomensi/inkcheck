@@ -66,12 +66,26 @@ pub trait FromSnmpValue<'a>: Sized {
 
 impl<'a> FromSnmpValue<'a> for i64 {
     fn from_snmp_value(value: &'a Value<'a>) -> Result<Self, AppError> {
-        if let Value::Integer(v) = value {
-            Ok(*v)
-        } else {
-            Err(AppError::new(ErrorKind::TypeMismatch(
-                "Expected Integer, but received a different type".to_string(),
-            )))
+        match value {
+            Value::Integer(v) => Ok(*v),
+            Value::Counter32(v) | Value::Timeticks(v) => Ok(*v as i64),
+            Value::Counter64(v) => Ok(*v as i64),
+            Value::OctetString(bytes) => {
+                let s = std::str::from_utf8(bytes).map_err(|_| {
+                    AppError::new(ErrorKind::TypeMismatch(
+                        "Invalid UTF-8 in OctetString".to_string(),
+                    ))
+                })?;
+
+                s.trim().parse::<i64>().map_err(|_| {
+                    AppError::new(ErrorKind::TypeMismatch(format!(
+                        "Expected numeric string, but got: '{s}'",
+                    )))
+                })
+            }
+            _ => Err(AppError::new(ErrorKind::TypeMismatch(format!(
+                "Unsupported type for i64 conversion: {value:?}"
+            )))),
         }
     }
 }

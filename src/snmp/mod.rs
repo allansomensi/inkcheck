@@ -21,6 +21,7 @@ pub struct SnmpClientParams {
     pub timeout: u64,
     pub data_dir: Option<PathBuf>,
     pub extra_supplies: bool,
+    pub metrics: bool,
 }
 
 /// Creates an SNMP session based on the provided client parameters.

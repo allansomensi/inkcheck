@@ -64,6 +64,10 @@ pub struct Args {
     #[arg(short, long)]
     extra_supplies: bool,
 
+    /// Display metrics
+    #[arg(short, long)]
+    metrics: bool,
+
     /// Cli theme
     #[arg(long, default_value_t = CliTheme::Solid)]
     theme: CliTheme,
@@ -110,6 +114,7 @@ pub fn parse_args() -> Result<AppParams, AppError> {
             timeout: args.timeout,
             data_dir: args.data_dir,
             extra_supplies: args.extra_supplies,
+            metrics: args.metrics,
         },
     };
 
@@ -120,6 +125,7 @@ pub fn parse_args() -> Result<AppParams, AppError> {
 pub fn show_printer_values(
     printer: Printer,
     extra_supplies: bool,
+    metrics: bool,
     theme: &CliTheme,
     output: &OutputFormat,
 ) {
@@ -223,6 +229,34 @@ pub fn show_printer_values(
                 if let Some(level) = printer.reservoir.as_ref().and_then(|t| t.level_percent) {
                     let color = if level as u8 == 100 { "green" } else { "red" };
                     show_progress("Reservoir".white(), level as u8, color, theme);
+                }
+            }
+
+            if metrics {
+                if let Some(total_impressions) =
+                    printer.metrics.as_ref().and_then(|m| m.total_impressions)
+                {
+                    println!("\n\n--> {}", "Metrics:".bright_white().bold());
+                    print!(
+                        "\n{} {total_impressions} pages",
+                        "Total impressions:".bright_cyan().bold()
+                    );
+                }
+                if let Some(mono_impressions) =
+                    printer.metrics.as_ref().and_then(|m| m.mono_impressions)
+                {
+                    print!(
+                        "\n{} {mono_impressions} pages",
+                        "Mono: ".bright_cyan().bold()
+                    );
+                }
+                if let Some(color_impressions) =
+                    printer.metrics.as_ref().and_then(|m| m.color_impressions)
+                {
+                    print!(
+                        "\n{} {color_impressions} pages",
+                        "Color:".bright_cyan().bold()
+                    );
                 }
             }
 

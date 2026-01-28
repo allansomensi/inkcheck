@@ -7,6 +7,13 @@ pub mod driver;
 pub mod load;
 pub mod supply;
 
+#[derive(Serialize)]
+pub struct Metrics {
+    pub total_impressions: Option<i64>,
+    pub mono_impressions: Option<i64>,
+    pub color_impressions: Option<i64>,
+}
+
 /// Represents a printer with toner levels and other relevant details.
 ///
 /// This struct stores information about a printer, including its name, brand,
@@ -20,6 +27,7 @@ pub struct Printer {
     pub drums: Drums,
     pub fuser: Option<Fuser>,
     pub reservoir: Option<Reservoir>,
+    pub metrics: Option<Metrics>,
 }
 
 impl Printer {
@@ -30,6 +38,7 @@ impl Printer {
         drums: Drums,
         fuser: Option<Fuser>,
         reservoir: Option<Reservoir>,
+        metrics: Option<Metrics>,
     ) -> Self {
         Self {
             name,
@@ -38,6 +47,7 @@ impl Printer {
             drums,
             fuser,
             reservoir,
+            metrics,
         }
     }
 
@@ -80,6 +90,7 @@ mod tests {
             Drums::default(),
             Some(Fuser::new(75, 100, None)),
             None,
+            None,
         );
 
         assert_eq!(printer.name, "Constructor Test");
@@ -102,6 +113,7 @@ mod tests {
                 yellow_toner: Some(Toner::new(10, 100, None)),
             },
             Drums::default(),
+            None,
             None,
             None,
         );
@@ -131,6 +143,7 @@ mod tests {
             },
             None,
             None,
+            None,
         );
 
         printer.calculate_all_levels();
@@ -150,6 +163,7 @@ mod tests {
             Drums::default(),
             Some(Fuser::new(75, 100, None)),
             None,
+            None,
         );
 
         printer.calculate_all_levels();
@@ -166,6 +180,7 @@ mod tests {
             Drums::default(),
             None,
             Some(Reservoir::new(40, 50, None)),
+            None,
         );
 
         printer.calculate_all_levels();
@@ -188,6 +203,7 @@ mod tests {
             },
             Some(Fuser::new(30, 100, None)),
             Some(Reservoir::new(20, 100, None)),
+            None,
         );
 
         assert!(printer

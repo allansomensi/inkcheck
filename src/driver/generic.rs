@@ -10,7 +10,7 @@ use crate::{
             toner::{Toner, TonerColor, Toners},
             PrinterSupply,
         },
-        Printer,
+        Metrics, Printer,
     },
     snmp::{value::get_snmp_value, SnmpClientParams},
     utils::parse_oid_to_vec,
@@ -194,6 +194,54 @@ impl PrinterDriver for GenericDriver {
             })?;
         }
 
+        let mut metrics: Option<Metrics> = None;
+        let mut total_impressions: Option<i64> = None;
+        let mut mono_impressions: Option<i64> = None;
+        let mut color_impressions: Option<i64> = None;
+
+        if params.metrics {
+            if let Some(oid_str) = oids
+                .get("metrics")
+                .and_then(|m| m.get("total_impressions"))
+                .and_then(|s| s.as_str())
+            {
+                if !oid_str.is_empty() {
+                    let total_impressions_oid = parse_oid_to_vec(oid_str)?;
+                    total_impressions =
+                        Some(get_snmp_value::<i64>(&total_impressions_oid, params)?);
+                }
+            }
+
+            if let Some(oid_str) = oids
+                .get("metrics")
+                .and_then(|m| m.get("mono_impressions"))
+                .and_then(|s| s.as_str())
+            {
+                if !oid_str.is_empty() {
+                    let mono_impressions_oid = parse_oid_to_vec(oid_str)?;
+                    mono_impressions = Some(get_snmp_value::<i64>(&mono_impressions_oid, params)?);
+                }
+            }
+
+            if let Some(oid_str) = oids
+                .get("metrics")
+                .and_then(|m| m.get("color_impressions"))
+                .and_then(|s| s.as_str())
+            {
+                if !oid_str.is_empty() {
+                    let color_impressions_oid = parse_oid_to_vec(oid_str)?;
+                    color_impressions =
+                        Some(get_snmp_value::<i64>(&color_impressions_oid, params)?);
+                }
+            }
+
+            metrics = Some(Metrics {
+                total_impressions,
+                mono_impressions,
+                color_impressions,
+            });
+        }
+
         let mut printer = Printer::new(
             printer_name.to_string(),
             serial_number,
@@ -201,6 +249,7 @@ impl PrinterDriver for GenericDriver {
             drums,
             fuser,
             reservoir,
+            metrics,
         );
 
         printer.calculate_all_levels();

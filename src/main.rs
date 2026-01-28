@@ -28,6 +28,7 @@ fn main() -> Result<(), error::AppError> {
     cli::show_printer_values(
         printer,
         params.snmp.extra_supplies,
+        params.snmp.metrics,
         &params.app.theme,
         &params.app.output,
     );

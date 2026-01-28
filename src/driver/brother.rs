@@ -138,6 +138,7 @@ fn get_brother_supplies_levels(
         drums,
         fuser,
         None,
+        None,
     ))
 }
 
