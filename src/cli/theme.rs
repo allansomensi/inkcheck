@@ -2,10 +2,7 @@ use clap::ValueEnum;
 use std::fmt::Display;
 
 /// Enum representing different CLI themes.
-///
-/// This enum defines the available themes that can be used in the CLI interface,
-/// affecting the visual presentation.
-#[derive(Debug, Clone, ValueEnum, Default)]
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
 pub enum CliTheme {
     #[default]
     Solid,
@@ -19,32 +16,27 @@ pub enum CliTheme {
     Moon,
 }
 
-impl Display for CliTheme {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl CliTheme {
+    pub fn chars(&self) -> &'static str {
         match self {
-            Self::Solid => write!(f, "solid"),
-            Self::Blocks => write!(f, "blocks"),
-            Self::Circles => write!(f, "circles"),
-            Self::Diamonds => write!(f, "diamonds"),
-            Self::Shades => write!(f, "shades"),
-            Self::Vintage => write!(f, "vintage"),
-            Self::Stars => write!(f, "stars"),
-            Self::Emoji => write!(f, "emoji"),
-            Self::Moon => write!(f, "moon"),
+            Self::Solid => "█ ",
+            Self::Blocks => "█▓▒░",
+            Self::Circles => "●○",
+            Self::Diamonds => "◆◇",
+            Self::Shades => "▉▇▆▅▄▃▂▁",
+            Self::Vintage => "#-",
+            Self::Stars => "★☆",
+            Self::Emoji => "😊🙂😐🙁😞",
+            Self::Moon => "🌕🌖🌗🌘🌑",
         }
     }
 }
 
-pub fn get_theme_chars(theme: &CliTheme) -> &str {
-    match theme {
-        CliTheme::Solid => "█ ",
-        CliTheme::Blocks => "█▓▒░",
-        CliTheme::Circles => "●○",
-        CliTheme::Diamonds => "◆◇",
-        CliTheme::Shades => "▉▇▆▅▄▃▂▁",
-        CliTheme::Vintage => "#-",
-        CliTheme::Stars => "★☆",
-        CliTheme::Emoji => "😊🙂😐🙁😞",
-        CliTheme::Moon => "🌕🌖🌗🌘🌑",
+impl Display for CliTheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.to_possible_value()
+            .expect("variant not skipped")
+            .get_name()
+            .fmt(f)
     }
 }

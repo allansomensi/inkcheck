@@ -25,7 +25,7 @@ fn main() -> Result<(), error::AppError> {
     };
 
     // Display the formatted values.
-    cli::show_printer_values(
+    cli::display::show_printer_values(
         printer,
         params.snmp.extra_supplies,
         params.snmp.metrics,
