@@ -1,6 +1,9 @@
 use super::theme::CliTheme;
 use indicatif::{ProgressBar, ProgressStyle};
 
+/// Renders a static progress bar to the terminal representing a specific percentage level.
+///
+/// The bar is customized with a label, colors, and a character theme.
 pub fn show_progress(label: &str, label_color: &str, level: u8, bar_color: &str, theme: CliTheme) {
     let template =
         format!("{{prefix:>12.{label_color}.bold}} [{{bar:25.{bar_color}}}] {{pos:>3}}%");

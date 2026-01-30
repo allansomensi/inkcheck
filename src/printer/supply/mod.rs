@@ -3,7 +3,7 @@ pub mod fuser;
 pub mod reservoir;
 pub mod toner;
 
-/// Represents the different types of supplies.
+/// Categorizes the different types of replaceable printer consumables.
 pub enum PrinterSupply {
     Toner,
     Drum,
@@ -12,6 +12,7 @@ pub enum PrinterSupply {
 }
 
 impl std::fmt::Display for PrinterSupply {
+    /// Formats the supply type as a human-readable string.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Toner => write!(f, "Toner"),
@@ -22,6 +23,9 @@ impl std::fmt::Display for PrinterSupply {
     }
 }
 
+/// Defines a common interface for calculating the remaining life percentage of a supply component.
+///
+/// Implementors should use their internal current and maximum levels to update their percentage field.
 pub trait CalculateLevel {
     fn calculate_level_percent(&mut self);
 }

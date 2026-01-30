@@ -24,17 +24,10 @@ const YELLOW_DRUM_CODE: u8 = 0x7b;
 
 const FUSER_CODE: u8 = 0x6a;
 
-/// The function scans for the exact sequence `[toner_code, 0x01, 0x04]`.
-/// If the sequence is found, the next **4 bytes** are extracted as a big-endian `u32` value,
-/// converted to a percentage, and returned as `i64`.
+/// Scans a raw byte slice for a specific supply code pattern to extract its remaining percentage.
 ///
-/// ## Arguments
-/// * `bytes` - A slice of bytes representing the raw printer data.
-/// * `toner_code` - The specific toner code to search for.
-///
-/// ## Returns
-/// * `Some(i64)` - The toner level as a percentage if found.
-/// * `None` - If the toner code sequence is not found or the data is incomplete.
+/// Looks for the sequence `[code, 0x01, 0x04]` and interprets the following 4 bytes as a
+/// big-endian integer representing the percentage (scaled by 100).
 fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
     let pattern = [toner_code, 0x01, 0x04];
 
@@ -50,14 +43,19 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
     None
 }
 
-/// Implementation of the specific driver for `Brother` printers.
+/// Driver implementation for Brother printers.
+///
+/// Uses a proprietary "maintenance OID" that returns a binary blob containing data for
+/// all consumable supplies (toners, drums, fuser).
 pub struct BrotherDriver;
 
 impl PrinterDriver for BrotherDriver {
+    /// Checks if the printer name contains "brother" (case-insensitive).
     fn is_compatible(&self, printer_name: &str) -> bool {
         printer_name.to_lowercase().contains("brother")
     }
 
+    /// Retrieves supply levels by parsing Brother's proprietary binary data structure.
     fn get_supplies(
         &self,
         params: &SnmpClientParams,
@@ -67,11 +65,10 @@ impl PrinterDriver for BrotherDriver {
     }
 }
 
-/// This function retrieves toner levels for a Brother printer and returns a [`Printer`] object.
+/// Fetches and parses the maintenance OID to populate the [`Printer`] struct.
 ///
-/// It attempts to read the toner levels for black, cyan, magenta, and yellow toners. If any toner
-/// is not found, it will be returned as [None] in the [`Printer`] struct.
-/// If the black toner is not found, an error is returned.
+/// Supports both standard and legacy (e.g., HL-5350DN) OID variants. Supplies not found
+/// in the byte stream are set to `None`.
 fn get_brother_supplies_levels(
     ctx: &SnmpClientParams,
     printer_name: String,

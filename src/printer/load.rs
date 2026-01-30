@@ -9,7 +9,7 @@ static INTERNAL_DATA_DIR: Dir = include_dir!("src/data");
 /// Loads printer data from a JSON file based on the brand and model.
 ///
 /// This function searches for a JSON file corresponding to the specified printer brand in the given `data_dir` directory.
-/// If no directory is provided, it defaults to using the `INTERNAL_DATA_DIR` static directory.
+/// If no directory is provided, it defaults to using the [`INTERNAL_DATA_DIR`] static directory.
 /// Once a matching file is found, it loads the JSON data and returns the value associated with the specified model.
 pub fn load_printer(
     brand: &str,

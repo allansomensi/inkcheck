@@ -1,6 +1,7 @@
 use crate::printer::supply::CalculateLevel;
 use serde::Serialize;
 
+/// Represents a single imaging drum unit, tracking its current usage and maximum capacity.
 #[derive(Clone, Serialize)]
 pub struct Drum {
     pub level: i64,
@@ -9,6 +10,7 @@ pub struct Drum {
 }
 
 impl Drum {
+    /// Creates a new [`Drum`] instance.
     pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
         Self {
             level,
@@ -18,6 +20,10 @@ impl Drum {
     }
 }
 
+/// Aggregates the imaging drums for standard CMYK colors.
+///
+/// Each slot is optional to support monochrome printers (which only use `black_drum`)
+/// or devices where specific color data is unavailable.
 #[derive(Default, Clone, Serialize)]
 pub struct Drums {
     pub black_drum: Option<Drum>,
@@ -27,6 +33,10 @@ pub struct Drums {
 }
 
 impl CalculateLevel for Option<Drum> {
+    /// Computes the remaining life percentage based on current and maximum levels.
+    ///
+    /// Updates `level_percent` only if the drum exists and `max_level` is greater than zero
+    /// to avoid division by zero errors.
     fn calculate_level_percent(&mut self) {
         if let Some(drum) = self {
             if drum.max_level > 0 {

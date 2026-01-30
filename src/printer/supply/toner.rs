@@ -2,6 +2,10 @@ use crate::printer::supply::CalculateLevel;
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 
+/// Aggregates the four standard CMYK toner cartridges.
+///
+/// Each field is optional, allowing this structure to represent both monochrome printers
+/// (which only use `black_toner`) and full-color devices.
 #[derive(Default, Clone, Serialize)]
 pub struct Toners {
     pub black_toner: Option<Toner>,
@@ -10,6 +14,7 @@ pub struct Toners {
     pub yellow_toner: Option<Toner>,
 }
 
+/// Represents a single toner cartridge, tracking its current fill level and maximum capacity.
 #[derive(Clone, Serialize)]
 pub struct Toner {
     pub level: i64,
@@ -18,6 +23,7 @@ pub struct Toner {
 }
 
 impl Toner {
+    /// Creates a new [`Toner`] instance.
     pub fn new(level: i64, max_level: i64, level_percent: Option<i64>) -> Self {
         Self {
             level,
@@ -28,6 +34,9 @@ impl Toner {
 }
 
 impl CalculateLevel for Option<Toner> {
+    /// Computes the remaining life percentage based on current and maximum levels.
+    ///
+    /// Updates `level_percent` only if the toner exists and `max_level` is greater than zero.
     fn calculate_level_percent(&mut self) {
         if let Some(toner) = self {
             if toner.max_level > 0 {
@@ -39,7 +48,7 @@ impl CalculateLevel for Option<Toner> {
     }
 }
 
-/// Represents the different colors of toner cartridges.
+/// Enumerates the standard CMYK color model used for printer toner cartridges.
 pub enum TonerColor {
     Black,
     Cyan,
@@ -48,6 +57,7 @@ pub enum TonerColor {
 }
 
 impl Display for TonerColor {
+    /// Formats the toner color as a capitalized human-readable string.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Black => write!(f, "Black"),

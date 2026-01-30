@@ -2,22 +2,10 @@ use super::{create_snmp_session, SnmpClientParams};
 use crate::error::{AppError, ErrorKind};
 use snmp2::{Oid, Value};
 
-/// Retrieves an SNMP value for a given OID and converts it to the specified type.
+/// Retrieves and converts a single SNMP value for a specific OID.
 ///
-/// This function performs an SNMP `GET` operation for a specified OID and converts the resulting SNMP value
-/// into the desired Rust type using the [FromSnmpValue] trait. It creates an SNMP session using the provided
-/// [SnmpClientParams] and returns the value as the requested type.
-///
-/// ## Arguments:
-/// - `oid`: A slice of `u64` representing the OID to retrieve from the SNMP device.
-/// - `ctx`: A reference to [SnmpClientParams] containing the SNMP client parameters.
-///
-/// ## Returns:
-/// - `Result<T, String>`: Returns the SNMP value converted to type `T` if successful, or an error message if the operation fails.
-///
-/// ## Type Constraints:
-/// - `T`: The target type, which must implement the [FromSnmpValue] trait. This allows the conversion of the SNMP value
-///   into any type that supports this trait.
+/// Handles session initialization and includes automatic retry logic (up to 3 times)
+/// for transient SNMPv3 USM/Security context errors.
 pub fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
 where
     T: for<'a> FromSnmpValue<'a>,
@@ -32,14 +20,27 @@ where
 
     let oid = Oid::from(oid).map_err(|_| AppError::new(ErrorKind::OidConversion))?;
 
-    let mut response = session
-        .get(&oid)
-        .map_err(|e| AppError::new(ErrorKind::SnmpRequest(e.to_string())))?;
+    let mut retries = 0;
+    loop {
+        match session.get(&oid) {
+            Ok(mut response) => {
+                if let Some((_oid, value)) = response.varbinds.next() {
+                    return T::from_snmp_value(&value);
+                } else {
+                    return Err(AppError::new(ErrorKind::OidNotFound));
+                }
+            }
+            Err(e) => {
+                let msg = e.to_string();
 
-    if let Some((_oid, value)) = response.varbinds.next() {
-        Ok(T::from_snmp_value(&value)?)
-    } else {
-        Err(AppError::new(ErrorKind::OidNotFound))
+                if (msg.contains("Security context") || msg.contains("USM")) && retries < 3 {
+                    retries += 1;
+                    continue;
+                }
+
+                return Err(AppError::new(ErrorKind::SnmpRequest(msg)));
+            }
+        }
     }
 }
 
@@ -53,7 +54,7 @@ where
 ///
 /// ## Implementations
 /// The following types implement [FromSnmpValue]:
-/// - [i64]: Converts from an SNMP [Value::Integer] value.
+/// - [i64]: Converts from various integer types ([Value::Integer], [Value::Counter32], [Value::Counter64], [Value::Timeticks]) and attempts to parse numeric strings from [Value::OctetString].
 /// - [String]: Converts from an SNMP [Value::OctetString] value.
 /// - [Vec<u64>]: Converts from an SNMP [Value::ObjectIdentifier] value, splitting the OID string into individual components.
 /// - [Vec<u8>]: Converts from an SNMP [Value::OctetString] bytes.

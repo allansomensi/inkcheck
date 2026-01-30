@@ -5,11 +5,15 @@ use crate::{
     snmp::SnmpClientParams,
 };
 
+/// Defines the interface for printer-specific SNMP implementations.
+///
+/// This trait allows different printer brands or models to implement unique logic for
+/// identifying themselves and retrieving supply data.
 pub trait PrinterDriver {
-    /// Checks if the driver is compatible with the printer based on the model name obtained via SNMP.
+    /// Determines if this driver supports the given printer model name.
     fn is_compatible(&self, printer_name: &str) -> bool;
 
-    /// The main method that retrieves the printer's supply levels.
+    /// Executes the SNMP queries required to populate the [`Printer`] data structure for the target device.
     fn get_supplies(
         &self,
         params: &SnmpClientParams,
@@ -17,15 +21,19 @@ pub trait PrinterDriver {
     ) -> Result<Printer, AppError>;
 }
 
-/// The [`DriverManager`] manages all available drivers and selects
-/// the most appropriate one for a given device.
+/// Registry and selector for printer drivers.
+///
+/// Manages the collection of available drivers and handles the logic for selecting
+/// the most appropriate implementation for a discovered device.
 pub struct DriverManager {
     drivers: Vec<Box<dyn PrinterDriver>>,
 }
 
 impl DriverManager {
-    /// Creates a new instance of [`DriverManager`] and registers all drivers.
-    /// More specific drivers should come before more generic ones.
+    /// Initializes the manager with the registry of supported drivers.
+    ///
+    /// **Note:** The order of registration matters. Specific drivers (e.g., Brother) are checked
+    /// before generic fallbacks to ensure the best possible data extraction.
     pub fn new() -> Self {
         Self {
             drivers: vec![
@@ -35,7 +43,7 @@ impl DriverManager {
         }
     }
 
-    /// Finds and returns the first compatible driver for a printer.
+    /// Iterates through registered drivers to find the first one compatible with the provided printer name.
     pub fn get_driver(&self, printer_name: &str) -> Option<&dyn PrinterDriver> {
         self.drivers
             .iter()

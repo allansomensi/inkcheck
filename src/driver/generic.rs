@@ -17,25 +17,16 @@ use crate::{
 };
 use serde_json::Value;
 
-/// Implementation of the generic driver.
+/// A catch-all driver that uses external JSON configuration files to map SNMP OIDs to printer supplies.
+///
+/// This driver is used when no specific hardcoded driver matches the printer.
+/// It relies on data files stored in the `data_dir` to define how to fetch levels for specific models.
 pub struct GenericDriver;
 
-/// Fetches a specific supply component (like a Toner or Drum) if its OIDs are defined.
+/// Helper function to fetch current and maximum levels for a specific supply component.
 ///
-/// This generic function abstracts the repetitive logic of:
-/// 1. Looking up 'level' and 'max_level' OIDs.
-/// 2. Fetching their values via SNMP if they exist.
-/// 3. Constructing the final supply struct (Toner, Drum, Fuser, etc.).
-///
-/// ## Arguments
-/// * `oids`: The loaded JSON value with all OID mappings.
-/// * `params`: SNMP client parameters.
-/// * `supply_type`: The category of the supply (e.g., PrinterSupply::Toner).
-/// * `color`: An optional color for the supply.
-/// * `constructor`: A closure that takes `level` and `max_level` and returns a new supply struct.
-///
-/// ## Returns
-/// An `Option` containing the constructed supply struct if successful, or `None`.
+/// It looks up the OID strings in the provided JSON configuration (based on supply type and color),
+/// parses them, and queries the SNMP agent. Returns `None` if the OIDs are missing or empty.
 fn fetch_supply<T>(
     oids: &Value,
     params: &SnmpClientParams,
@@ -74,26 +65,18 @@ fn fetch_supply<T>(
 }
 
 impl PrinterDriver for GenericDriver {
+    /// Always returns `true` as this is the fallback driver.
+    ///
+    /// Compatibility is ultimately determined by the existence of a matching JSON configuration file
+    /// during the `load_printer` step.
     fn is_compatible(&self, _printer_name: &str) -> bool {
-        // This driver is a "catch-all", so it considers itself compatible
-        // with anything, since the logic in `load_printer` will determine
-        // whether there is a JSON file for the model.
         true
     }
 
-    /// Retrieves printer supply information via SNMP.
+    /// Loads the model-specific JSON configuration and queries all mapped OIDs via SNMP.
     ///
-    /// Queries toner levels and other printer parameters using SNMP based on model-specific OID mappings
-    /// defined in a JSON configuration file. If the configuration for the specified printer is missing,
-    /// an error is returned.
-    ///
-    /// ## Parameters
-    /// - `params`: Reference to [`SnmpClientParams`] containing SNMP connection details.
-    /// - `printer_name`: Identifier for the printer driver to load the corresponding configuration.
-    ///
-    /// ## Returns
-    /// - `Ok(Printer)`: A [`Printer`] struct with name, brand, model, toner levels, and usage percentages.
-    /// - `Err(AppError)`: If the configuration or SNMP query fails.
+    /// Constructs a full [`Printer`] object by fetching toners and optionally fetching
+    /// extra supplies (drums, fuser, reservoir) and usage metrics if requested in `params`.
     fn get_supplies(
         &self,
         params: &SnmpClientParams,

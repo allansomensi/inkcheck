@@ -5,7 +5,7 @@ pub struct AppError {
 }
 
 impl AppError {
-    /// Creates a new error from an `ErrorKind`.
+    /// Creates a new error from an [`ErrorKind`].
     pub(crate) fn new(kind: ErrorKind) -> AppError {
         AppError { kind }
     }
@@ -37,8 +37,6 @@ pub enum ErrorKind {
     DirectoryRead,
     /// An error for when an OID string has an invalid format.
     InvalidOidFormat,
-    /// An error for when an unsupported SNMP version is used (e.g., v3).
-    UnsupportedVersion,
     /// An error for when a printer model is not supported.
     UnsupportedPrinter(String),
 }
@@ -59,7 +57,6 @@ impl std::fmt::Display for AppError {
             ErrorKind::InvalidDirectory => write!(f, "The specified directory is invalid or does not exist."),
             ErrorKind::DirectoryRead => write!(f, "Failed to read the contents of the specified directory."),
             ErrorKind::InvalidOidFormat => write!(f, "Invalid OID format. Segments must be numeric and separated by dots."),
-            ErrorKind::UnsupportedVersion => write!(f, "SNMP v3 is not supported yet. Please use v1 or v2c instead."),
             ErrorKind::UnsupportedPrinter(s) => write!(f, "Printer model '{s}' is not registered. You can manually add the printer and its corresponding OIDs."),
         }
     }

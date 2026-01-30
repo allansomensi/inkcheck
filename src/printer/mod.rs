@@ -7,6 +7,7 @@ pub mod driver;
 pub mod load;
 pub mod supply;
 
+/// Stores printing usage statistics, tracking total, monochrome, and color impression counts.
 #[derive(Serialize)]
 pub struct Metrics {
     pub total_impressions: Option<i64>,
@@ -14,11 +15,10 @@ pub struct Metrics {
     pub color_impressions: Option<i64>,
 }
 
-/// Represents a printer with toner levels and other relevant details.
+/// Represents a printer's state, including identity, supply levels, and usage metrics.
 ///
-/// This struct stores information about a printer, including its name, brand,
-/// model, and the current levels of the toner cartridges (Black, Cyan, Magenta, and Yellow).
-/// It also includes the maximum toner levels and the percentage of toner remaining for each color.
+/// This struct aggregates data for all consumable components (toners, drums, fuser, reservoir)
+/// and provides access to the device's serial number and print counters.
 #[derive(Serialize)]
 pub struct Printer {
     pub name: String,
@@ -31,6 +31,7 @@ pub struct Printer {
 }
 
 impl Printer {
+    /// Constructs a new [`Printer`] instance with the specified components and metrics.
     pub fn new(
         name: String,
         serial_number: Option<String>,
@@ -51,6 +52,10 @@ impl Printer {
         }
     }
 
+    /// Triggers percentage calculation for all attached supply components.
+    ///
+    /// This method iterates through toners, drums, fuser, and reservoir (if present),
+    /// updating their internal state to reflect the percentage of remaining life based on current/max values.
     pub fn calculate_all_levels(&mut self) {
         // Calculate Toners
         self.toners.black_toner.calculate_level_percent();
