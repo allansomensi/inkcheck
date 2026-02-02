@@ -20,6 +20,11 @@ pub fn show_printer_values(
         return;
     }
 
+    if let OutputFormat::Csv = output {
+        render_csv(&printer);
+        return;
+    }
+
     // Since Toner, Drum, and Fuser are different structs, we use a macro
     // to access the `.level_percent` field regardless of the specific type.
     macro_rules! render {
@@ -102,4 +107,53 @@ pub fn show_printer_values(
     }
 
     println!();
+}
+
+/// Formats and prints the printer data as a CSV record to standard output.
+///
+/// This output includes the printer name, serial number, toner levels,
+/// and total impression metrics in a comma-separated format.
+fn render_csv(printer: &Printer) {
+    let printer_name = printer.name.clone();
+    let header = "Name,Serial,Black_Toner,Cyan_Toner,Magenta_Toner,Yellow_Toner,Total_Impressions";
+
+    let serial = printer.serial_number.as_deref().unwrap_or("N/A");
+    let bt = printer
+        .toners
+        .black_toner
+        .as_ref()
+        .and_then(|t| t.level_percent)
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let ct = printer
+        .toners
+        .cyan_toner
+        .as_ref()
+        .and_then(|t| t.level_percent)
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let mt = printer
+        .toners
+        .magenta_toner
+        .as_ref()
+        .and_then(|t| t.level_percent)
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let yt = printer
+        .toners
+        .yellow_toner
+        .as_ref()
+        .and_then(|t| t.level_percent)
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+
+    let total_impr = printer
+        .metrics
+        .as_ref()
+        .and_then(|m| m.total_impressions)
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+
+    println!("{header}");
+    println!("\"{printer_name}\",\"{serial}\",{bt},{ct},{mt},{yt},{total_impr}");
 }

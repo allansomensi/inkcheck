@@ -5,11 +5,13 @@ use std::fmt::Display;
 ///
 /// - `Text`: Human-readable plain text (Default).
 /// - `Json`: Machine-readable JSON format for integration with other tools.
+/// - `Csv`: Comma-separated values for spreadsheets and data processing.
 #[derive(Debug, Clone, ValueEnum, Default)]
 pub enum OutputFormat {
     #[default]
     Text,
     Json,
+    Csv,
 }
 
 impl Display for OutputFormat {
@@ -17,6 +19,7 @@ impl Display for OutputFormat {
         match self {
             Self::Text => write!(f, "text"),
             Self::Json => write!(f, "json"),
+            Self::Csv => write!(f, "csv"),
         }
     }
 }
