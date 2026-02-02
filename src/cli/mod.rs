@@ -39,67 +39,102 @@ pub struct CliParams {
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
 pub struct Args {
+    /// Create a default configuration file
+    #[arg(long)]
+    pub init: bool,
+
     /// IP or hostname of the printer
-    host: String,
+    pub host: Option<String>,
 
     /// SNMP Service Port
     #[arg(long, default_value_t = 161)]
-    port: u16,
+    pub port: u16,
 
     /// SNMP Version
     #[arg(short, long, default_value_t = SnmpVersion::V1)]
-    snmp_version: SnmpVersion,
+    pub snmp_version: SnmpVersion,
 
     /// SNMP Community
     #[arg(short, long, default_value = "public")]
-    community: String,
+    pub community: String,
 
     /// Username (v3)
     #[arg(short, long)]
-    username: Option<String>,
+    pub username: Option<String>,
 
     /// Password (v3)
     #[arg(short, long)]
-    password: Option<String>,
+    pub password: Option<String>,
 
     /// Auth Protocol (v3)
     #[arg(long, default_value_t = AuthProtocol::Sha1)]
-    auth_protocol: AuthProtocol,
+    pub auth_protocol: AuthProtocol,
 
     /// Auth Cipher (v3)
     #[arg(long, default_value_t = AuthCipher::Aes128)]
-    auth_cipher: AuthCipher,
+    pub auth_cipher: AuthCipher,
 
     /// Timeout in seconds
     #[arg(short, long, default_value_t = 5)]
-    timeout: u64,
+    pub timeout: u64,
 
     /// Data directory
     #[arg(short, long)]
-    data_dir: Option<PathBuf>,
+    pub data_dir: Option<PathBuf>,
 
     /// Display levels of other supplies (drum, paper, etc.)
     #[arg(short, long)]
-    extra_supplies: bool,
+    pub extra_supplies: bool,
 
     /// Display metrics
     #[arg(short, long)]
-    metrics: bool,
+    pub metrics: bool,
 
     /// Cli theme
     #[arg(long, default_value_t = CliTheme::Solid)]
-    theme: CliTheme,
+    pub theme: CliTheme,
 
     /// Output format
     #[arg(long, short, default_value_t = OutputFormat::Text)]
-    output: OutputFormat,
+    pub output: OutputFormat,
 }
 
 /// Capture and return the command line arguments.
 pub fn parse_args() -> Result<AppParams, AppError> {
-    let args = Args::parse();
+    let mut args = Args::parse();
 
-    let resolved_ip = resolve_host(&args.host, args.port)?;
+    if args.init {
+        match crate::config::Config::create_default_template() {
+            Ok(path) => {
+                println!("✅ Configuration file created at: {path:?}");
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to create config file: {e}");
+                std::process::exit(1);
+            }
+        }
+    }
+
+    if args.host.is_none() {
+        use clap::CommandFactory;
+        let _ = Args::command().print_help();
+        std::process::exit(1);
+    }
+
+    let inventory = crate::config::Config::load().unwrap_or_default();
+    let target_input = args.host.clone().unwrap();
+
+    if let Some(saved_printer) = inventory.find_by_alias(&target_input) {
+        println!(
+            "📂 Loading saved configuration for: '{}'",
+            saved_printer.alias
+        );
+        crate::config::apply_config_to_args(&mut args, saved_printer);
+    }
+
+    let final_host = args.host.as_ref().unwrap();
+    let resolved_ip = resolve_host(final_host, args.port)?;
 
     Ok(AppParams {
         app: CliParams {

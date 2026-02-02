@@ -1,9 +1,24 @@
-# InkCheck 🖨️
+# Inkcheck 🖨️
 
-**InkCheck** is a CLI tool built in Rust that checks printer supply levels via `SNMP`. It provides a fast and efficient way to monitor the status of **toner**, **drum**, **fuser** and other consumables for both **color** and **monochrome** printers directly from the command line.
+[![Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg)](https://www.rust-lang.org/)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-![preview](https://github.com/user-attachments/assets/97243faf-8140-40cb-b43d-a0953070f4b7)
+**Inkcheck** is a powerful and fast CLI tool built in Rust to monitor printer supply levels via **SNMP**.
 
+It supports both **SNMP v1/v2c** and the secure **SNMP v3**, allowing you to check toners, drums, fusers, and waste reservoirs for a wide range of printers. It works with both IP addresses and Hostnames.
+
+<img width="427" height="493" alt="demo" src="https://github.com/user-attachments/assets/94596f00-497d-4e0d-acb8-71fbcfd11006" />
+
+## 🚀 Features
+
+- **Protocol Support:** SNMP v1, v2c, and **v3**.
+- **Hostname Resolution:** Target printers by IP (`192.168.1.10`) or Hostname (`printer_name`).
+- **Detailed Supplies:** Checks Toner, Drum, Fuser, and Waste Reservoir levels.
+- **Metrics:** Optional display of total, mono, and color impression counts.
+- **Extensible:** Uses JSON definitions for generic printer drivers.
+- **Automation Ready:** Supports **JSON output** for integration with other monitoring tools.
+- **Theming:** Multiple visual themes for the terminal.
 
 ## 🚀 Getting Started
 
@@ -43,9 +58,15 @@ inkcheck [IP] [OPTIONS]
 - `-s, --snmp-version [VERSION]` - SNMP version **(default: v2c)**
 - `-c, --community [COMMUNITY]`  - SNMP community **(default: public)**
 - `-t, --timeout [TIMEOUT]`      - Timeout in seconds **(default: 5)**
-- `-d, --data-dir [DIR]`         - Data directory
-- `--theme [THEME]`              - CLI theme **(default: solid)**
+- `-u, --username`               - Username **(v3)**
+- `-p, --password`               - Password **(v3)**
+- `--auth-protocol`              - Auth Protocol **(v3)**
+- `--auth-cipher`                - Auth Cipher **(v3)**
+- `-m, --metrics`                - Show impression counts (Total/Mono/Color)
 - `-e, --extra_supplies`         - Show extra supplies informations
+- `-d, --data-dir [DIR]`         - Data directory
+- `-o, --output`                 - Output format (**text** or **json**)
+- `--theme [THEME]`              - CLI theme **(default: solid)**
 - `-h, --help`                   - Display help information
 - `-V, --version`                - Display version information
 

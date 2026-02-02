@@ -1,4 +1,5 @@
 mod cli;
+mod config;
 mod driver;
 mod error;
 mod printer;
