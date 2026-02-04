@@ -24,8 +24,8 @@ fn main() {
 
 /// Orchestrates the application flow: parses CLI arguments, executes SNMP operations in a dedicated thread with increased stack size, and displays the results.
 fn run() -> Result<(), AppError> {
-    let params =
-        cli::parse_args().map_err(|e| AppError::new(error::ErrorKind::Parse(format!("{e}"))))?;
+    let params = cli::args::parse_args()
+        .map_err(|e| AppError::new(error::ErrorKind::Parse(format!("{e}"))))?;
 
     let snmp_params = params.snmp.clone();
 

@@ -1,0 +1,32 @@
+# InkCheck Inventory
+# Define your printers below to access them via alias.
+
+# Example 1: Standard Printer (SNMP v1/v2c)
+[[printers]]
+alias = "office"
+host = "192.168.1.50"
+snmp_version = "v2c"
+community = "public"
+timeout = 5
+
+# Example 2: Secure Printer (SNMP v3 - AuthNoPriv)
+[[printers]]
+alias = "hr-secure"
+host = "10.0.0.5"
+snmp_version = "v3"
+security_level = "authNoPriv"
+username = "admin"
+auth_protocol = "sha1"
+auth_password = "my_auth_password"
+
+# Example 3: Ultra Secure Printer (SNMP v3 - AuthPriv)
+[[printers]]
+alias = "financial"
+host = "10.0.0.10"
+snmp_version = "v3"
+security_level = "authPriv"
+username = "admin"
+auth_protocol = "sha256"
+auth_password = "my_auth_password"
+privacy_protocol = "aes128"
+privacy_password = "my_priv_password"

@@ -1,7 +1,7 @@
 use crate::{
     error::{AppError, ErrorKind},
     printer::{driver::DriverManager, Printer},
-    snmp::auth::{cipher::AuthCipher, protocol::AuthProtocol},
+    snmp::security::{AuthProtocol, PrivacyProtocol, SecurityLevel},
 };
 use snmp2::{
     v3::{self},
@@ -15,7 +15,7 @@ use std::{
 use value::get_snmp_value;
 use version::SnmpVersion;
 
-pub mod auth;
+pub mod security;
 pub mod value;
 pub mod version;
 
@@ -28,9 +28,11 @@ pub struct SnmpClientParams {
     pub port: u16,
     pub community: String,
     pub username: Option<String>,
-    pub password: Option<String>,
+    pub auth_password: Option<String>,
     pub auth_protocol: AuthProtocol,
-    pub auth_cipher: AuthCipher,
+    pub privacy_password: Option<String>,
+    pub privacy_protocol: PrivacyProtocol,
+    pub security_level: SecurityLevel,
     pub version: SnmpVersion,
     pub timeout: u64,
     pub data_dir: Option<PathBuf>,
@@ -57,36 +59,88 @@ pub fn create_snmp_session(ctx: &SnmpClientParams) -> Result<SyncSession, AppErr
         }
         SnmpVersion::V3 => {
             let username = ctx.username.as_deref().ok_or_else(|| {
-                AppError::new(ErrorKind::SnmpRequest("SNMPv3 requires a username.".into()))
-            })?;
-
-            let password = ctx.password.as_deref().ok_or_else(|| {
                 AppError::new(ErrorKind::SnmpRequest(
-                    "SNMPv3 with AuthPriv requires a password.".into(),
+                    "SNMPv3 requires a username (security name).".into(),
                 ))
             })?;
 
-            if password.is_empty() {
+            if username.is_empty() {
                 return Err(AppError::new(ErrorKind::SnmpRequest(
-                    "SNMPv3 password cannot be empty.".into(),
+                    "The username cannot be empty.".into(),
                 )));
             }
 
+            // Discover the Engine ID
             let engine_id = discover_engine_id(&ctx.ip.to_string(), ctx.port).map_err(|e| {
                 AppError::new(ErrorKind::SnmpRequest(format!(
-                    "SNMPv3 discovery failed: {e:?}"
+                    "Engine ID discovery failed: {e:?}"
                 )))
             })?;
 
-            let security = v3::Security::new(username.as_bytes(), password.as_bytes())
-                .with_auth_protocol(ctx.auth_protocol.into())
-                .with_auth(v3::Auth::AuthPriv {
-                    cipher: ctx.auth_cipher.into(),
-                    privacy_password: password.as_bytes().to_vec(),
-                })
-                .with_engine_id(&engine_id)
-                .unwrap();
+            // Build security context based on the user-selected security level
+            let security = match ctx.security_level {
+                SecurityLevel::NoAuthNoPriv => {
+                    // Username only, no passwords.
+                    v3::Security::new(username.as_bytes(), &[])
+                        .with_auth(v3::Auth::NoAuthNoPriv)
+                        .with_engine_id(&engine_id)
+                        .map_err(|e| {
+                            AppError::new(ErrorKind::SnmpRequest(format!(
+                                "Error configuring NoAuthNoPriv: {e:?}"
+                            )))
+                        })?
+                }
+                SecurityLevel::AuthNoPriv => {
+                    // Requires Username and Auth Password
+                    let auth_password = ctx.auth_password.as_deref().ok_or_else(|| {
+                        AppError::new(ErrorKind::SnmpRequest(
+                            "The AuthNoPriv level requires an authentication password (auth_password)."
+                                .into(),
+                        ))
+                    })?;
 
+                    v3::Security::new(username.as_bytes(), auth_password.as_bytes())
+                        .with_auth_protocol(ctx.auth_protocol.into())
+                        .with_auth(v3::Auth::AuthNoPriv)
+                        .with_engine_id(&engine_id)
+                        .map_err(|e| {
+                            AppError::new(ErrorKind::SnmpRequest(format!(
+                                "Error configuring AuthNoPriv: {e:?}"
+                            )))
+                        })?
+                }
+                SecurityLevel::AuthPriv => {
+                    // Requires everything: Username, Auth Password, and Privacy Password
+                    let auth_password = ctx.auth_password.as_deref().ok_or_else(|| {
+                        AppError::new(ErrorKind::SnmpRequest(
+                            "The AuthPriv level requires an authentication password (auth_password)."
+                                .into(),
+                        ))
+                    })?;
+
+                    let privacy_password = ctx.privacy_password.as_deref().ok_or_else(|| {
+                        AppError::new(ErrorKind::SnmpRequest(
+                            "The AuthPriv level requires a privacy password (privacy_password)."
+                                .into(),
+                        ))
+                    })?;
+
+                    v3::Security::new(username.as_bytes(), auth_password.as_bytes())
+                        .with_auth_protocol(ctx.auth_protocol.into())
+                        .with_auth(v3::Auth::AuthPriv {
+                            cipher: ctx.privacy_protocol.into(),
+                            privacy_password: privacy_password.as_bytes().to_vec(),
+                        })
+                        .with_engine_id(&engine_id)
+                        .map_err(|e| {
+                            AppError::new(ErrorKind::SnmpRequest(format!(
+                                "Error configuring AuthPriv: {e:?}"
+                            )))
+                        })?
+                }
+            };
+
+            // Create the session
             SyncSession::new_v3(agent_address, Some(timeout), 0, security).map_err(AppError::from)
         }
     }

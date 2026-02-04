@@ -1,9 +1,11 @@
-use crate::cli::Args;
-use crate::snmp::auth::{cipher::AuthCipher, protocol::AuthProtocol};
+use crate::cli::args::Args;
+use crate::snmp::security::{AuthProtocol, PrivacyProtocol, SecurityLevel};
 use crate::snmp::version::SnmpVersion;
 use clap::ValueEnum;
 use serde::Deserialize;
 use std::path::PathBuf;
+
+const CONFIG_TEMPLATE: &str = include_str!("../../assets/config.template.toml");
 
 /// Represents the main application configuration containing a list of printers.
 #[derive(Debug, Deserialize, Default)]
@@ -20,10 +22,12 @@ pub struct PrinterConfig {
     pub port: Option<u16>,
     pub snmp_version: Option<String>,
     pub community: Option<String>,
+    pub security_level: Option<String>,
     pub username: Option<String>,
-    pub password: Option<String>,
+    pub auth_password: Option<String>,
+    pub privacy_password: Option<String>,
     pub auth_protocol: Option<String>,
-    pub auth_cipher: Option<String>,
+    pub privacy_protocol: Option<String>,
     pub timeout: Option<u64>,
 }
 
@@ -59,28 +63,8 @@ impl Config {
             std::fs::create_dir_all(parent)?;
         }
 
-        let template = r#"# InkCheck Inventory
-# Define your printers below to access them via alias.
-
-# Example 1: Standard Printer (SNMP v2c)
-[[printers]]
-alias = "office"
-host = "192.168.1.50"
-community = "public"
-
-# Example 2: Secure Printer (SNMP v3)
-[[printers]]
-alias = "hr-secure"
-host = "10.0.0.5"
-snmp_version = "v3"
-username = "admin"
-auth_protocol = "sha1"
-auth_cipher = "aes128"
-password = "my_secret_pass"
-"#;
-
         // Write file to disk
-        std::fs::write(&path, template)?;
+        std::fs::write(&path, CONFIG_TEMPLATE)?;
 
         Ok(path)
     }
@@ -106,28 +90,38 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
         args.community = comm.clone();
     }
 
-    if let Some(user) = &config.username {
-        args.username = Some(user.clone());
+    if let Some(sec_str) = &config.security_level {
+        if let Ok(security_level) = SecurityLevel::from_str(sec_str, true) {
+            args.security_level = security_level;
+        }
     }
 
-    if let Some(pass) = &config.password {
-        args.password = Some(pass.clone());
+    if let Some(username) = &config.username {
+        args.username = Some(username.clone());
+    }
+
+    if let Some(auth_password) = &config.auth_password {
+        args.auth_password = Some(auth_password.clone());
+    }
+
+    if let Some(privacy_password) = &config.privacy_password {
+        args.privacy_password = Some(privacy_password.clone());
     }
 
     if let Some(auth_str) = &config.auth_protocol {
-        if let Ok(ap) = AuthProtocol::from_str(auth_str, true) {
-            args.auth_protocol = ap;
+        if let Ok(auth_protocol) = AuthProtocol::from_str(auth_str, true) {
+            args.auth_protocol = auth_protocol;
         }
     }
 
-    if let Some(priv_str) = &config.auth_cipher {
-        if let Ok(ac) = AuthCipher::from_str(priv_str, true) {
-            args.auth_cipher = ac;
+    if let Some(priv_str) = &config.privacy_protocol {
+        if let Ok(privacy_protocol) = PrivacyProtocol::from_str(priv_str, true) {
+            args.privacy_protocol = privacy_protocol;
         }
     }
 
-    if let Some(t) = config.timeout {
-        args.timeout = t;
+    if let Some(timeout) = config.timeout {
+        args.timeout = timeout;
     }
 }
 
