@@ -27,6 +27,7 @@ alias = "finance"
 host = "10.0.0.10"
 snmp_version = "v3"
 security_level = "auth-priv"
+context_name = "v3context"
 username = "admin"
 # Authentication settings
 auth_protocol = "sha256"

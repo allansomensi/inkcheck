@@ -36,3 +36,6 @@ features = [
     "run-cargo-clippy",
     "run-cargo-fmt",
 ]
+
+[patch.crates-io]
+snmp2 = { git = "https://github.com/allansomensi/snmp2.git", rev = "a2db1b8add935d2419c6e6ec64d228a7fabe026c" }

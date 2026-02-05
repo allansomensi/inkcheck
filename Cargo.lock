@@ -752,8 +752,7 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 [[package]]
 name = "snmp2"
 version = "0.4.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49dc4ff9dc6c2b03d818a4c2abb8ffcef9e16357113ddc7ce1631c03195fde64"
+source = "git+https://github.com/allansomensi/snmp2.git?rev=a2db1b8add935d2419c6e6ec64d228a7fabe026c#a2db1b8add935d2419c6e6ec64d228a7fabe026c"
 dependencies = [
  "asn1-rs",
  "openssl",

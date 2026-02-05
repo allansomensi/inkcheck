@@ -23,6 +23,7 @@ pub struct PrinterConfig {
     pub snmp_version: Option<String>,
     pub community: Option<String>,
     pub security_level: Option<String>,
+    pub context_name: Option<String>,
     pub username: Option<String>,
     pub auth_password: Option<String>,
     pub privacy_password: Option<String>,
@@ -97,6 +98,10 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
 
     if let Some(username) = &config.username {
         args.username = Some(username.clone());
+    }
+
+    if let Some(context_name) = &config.context_name {
+        args.context_name = context_name.clone();
     }
 
     if let Some(auth_password) = &config.auth_password {

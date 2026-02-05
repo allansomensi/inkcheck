@@ -56,6 +56,10 @@ pub struct Args {
     #[arg(short = 'X', long, help_heading = "SNMPv3")]
     pub privacy_password: Option<String>,
 
+    /// SNMPv3 Context Name.
+    #[arg(short = 'n', long, default_value_t = String::new(), help_heading = "SNMPv3")]
+    pub context_name: String,
+
     /// Path to a custom data directory.
     #[arg(short = 'd', long)]
     pub data_dir: Option<PathBuf>,

@@ -28,6 +28,7 @@ pub struct SnmpClientParams {
     pub privacy_password: Option<String>,
     pub privacy_protocol: PrivacyProtocol,
     pub security_level: SecurityLevel,
+    pub context_name: String,
     pub version: SnmpVersion,
     pub data_dir: Option<PathBuf>,
     pub extra_supplies: bool,
@@ -47,6 +48,7 @@ impl SnmpClientParams {
             privacy_password: args.privacy_password.clone(),
             privacy_protocol: args.privacy_protocol,
             security_level: args.security_level,
+            context_name: args.context_name.clone(),
             version: args.snmp_version,
             data_dir: args.data_dir.clone(),
             extra_supplies: args.extra_supplies,
@@ -89,9 +91,9 @@ async fn build_v3_session(
     }
 
     let security = match ctx.security_level {
-        SecurityLevel::NoAuthNoPriv => {
-            v3::Security::new(username.as_bytes(), &[]).with_auth(v3::Auth::NoAuthNoPriv)
-        }
+        SecurityLevel::NoAuthNoPriv => v3::Security::new(username.as_bytes(), &[])
+            .with_auth(v3::Auth::NoAuthNoPriv)
+            .with_context_name(&ctx.context_name),
         SecurityLevel::AuthNoPriv => {
             let pass = ctx.auth_password.as_deref().ok_or_else(|| {
                 AppError::new(ErrorKind::Cli(
@@ -101,6 +103,7 @@ async fn build_v3_session(
             v3::Security::new(username.as_bytes(), pass.as_bytes())
                 .with_auth_protocol(ctx.auth_protocol.into())
                 .with_auth(v3::Auth::AuthNoPriv)
+                .with_context_name(&ctx.context_name)
         }
         SecurityLevel::AuthPriv => {
             let auth_pass = ctx.auth_password.as_deref().ok_or_else(|| {
@@ -120,6 +123,7 @@ async fn build_v3_session(
                     cipher: ctx.privacy_protocol.into(),
                     privacy_password: priv_pass.as_bytes().to_vec(),
                 })
+                .with_context_name(&ctx.context_name)
         }
     };
 
