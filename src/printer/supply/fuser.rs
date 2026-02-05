@@ -4,7 +4,7 @@ use serde::Serialize;
 /// Represents the printer's fuser unit, responsible for bonding toner to paper.
 ///
 /// Tracks the current usage level and maximum capacity to determine the remaining lifespan.
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Fuser {
     pub level: i64,
     pub max_level: i64,

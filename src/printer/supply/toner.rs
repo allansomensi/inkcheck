@@ -4,9 +4,8 @@ use std::fmt::{Display, Formatter};
 
 /// Aggregates the four standard CMYK toner cartridges.
 ///
-/// Each field is optional, allowing this structure to represent both monochrome printers
-/// (which only use `black_toner`) and full-color devices.
-#[derive(Default, Clone, Serialize)]
+/// Each field is optional, allowing this structure to represent both monochrome printers and full-color devices.
+#[derive(Debug, Default, Clone, Serialize)]
 pub struct Toners {
     pub black_toner: Option<Toner>,
     pub cyan_toner: Option<Toner>,
@@ -15,7 +14,7 @@ pub struct Toners {
 }
 
 /// Represents a single toner cartridge, tracking its current fill level and maximum capacity.
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Toner {
     pub level: i64,
     pub max_level: i64,

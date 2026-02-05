@@ -7,19 +7,18 @@ pub mod driver;
 pub mod load;
 pub mod supply;
 
-/// Stores printing usage statistics, tracking total, monochrome, and color impression counts.
-#[derive(Serialize)]
+/// Tracks printing usage statistics including total, monochrome, and color impressions.
+#[derive(Serialize, Debug, Default, Clone, Copy)]
 pub struct Metrics {
     pub total_impressions: Option<i64>,
     pub mono_impressions: Option<i64>,
     pub color_impressions: Option<i64>,
 }
 
-/// Represents a printer's state, including identity, supply levels, and usage metrics.
+/// Represents the comprehensive state of a printer.
 ///
-/// This struct aggregates data for all consumable components (toners, drums, fuser, reservoir)
-/// and provides access to the device's serial number and print counters.
-#[derive(Serialize)]
+/// Aggregates identity, consumable supplies, and usage metrics.
+#[derive(Serialize, Debug)]
 pub struct Printer {
     pub name: String,
     pub serial_number: Option<String>,
@@ -31,7 +30,7 @@ pub struct Printer {
 }
 
 impl Printer {
-    /// Constructs a new [`Printer`] instance with the specified components and metrics.
+    /// Creates a new [`Printer`] instance.
     pub fn new(
         name: String,
         serial_number: Option<String>,
@@ -52,24 +51,21 @@ impl Printer {
         }
     }
 
-    /// Triggers percentage calculation for all attached supply components.
-    ///
-    /// This method iterates through toners, drums, fuser, and reservoir (if present),
-    /// updating their internal state to reflect the percentage of remaining life based on current/max values.
+    /// Iterates over all attached supply components and calculates their remaining life percentage.
     pub fn calculate_all_levels(&mut self) {
-        // Calculate Toners
+        // Toners
         self.toners.black_toner.calculate_level_percent();
         self.toners.cyan_toner.calculate_level_percent();
         self.toners.magenta_toner.calculate_level_percent();
         self.toners.yellow_toner.calculate_level_percent();
 
-        // Calculate Drums
+        // Drums
         self.drums.black_drum.calculate_level_percent();
         self.drums.cyan_drum.calculate_level_percent();
         self.drums.magenta_drum.calculate_level_percent();
         self.drums.yellow_drum.calculate_level_percent();
 
-        // Calculate Other Supplies
+        // Maintenance
         self.fuser.calculate_level_percent();
         self.reservoir.calculate_level_percent();
     }

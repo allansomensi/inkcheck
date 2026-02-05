@@ -4,17 +4,19 @@ use crate::{
     printer::Printer,
     snmp::SnmpClientParams,
 };
+use async_trait::async_trait;
 
 /// Defines the interface for printer-specific SNMP implementations.
 ///
 /// This trait allows different printer brands or models to implement unique logic for
 /// identifying themselves and retrieving supply data.
-pub trait PrinterDriver {
+#[async_trait]
+pub trait PrinterDriver: Sync + Send {
     /// Determines if this driver supports the given printer model name.
     fn is_compatible(&self, printer_name: &str) -> bool;
 
     /// Executes the SNMP queries required to populate the [`Printer`] data structure for the target device.
-    fn get_supplies(
+    async fn get_supplies(
         &self,
         params: &SnmpClientParams,
         printer_name: &str,

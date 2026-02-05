@@ -11,6 +11,7 @@ use crate::{
     },
     snmp::{value::get_snmp_value, SnmpClientParams},
 };
+use async_trait::async_trait;
 
 const BLACK_TONER_CODE: u8 = 0x6F;
 const CYAN_TONER_CODE: u8 = 0x70;
@@ -25,18 +26,14 @@ const YELLOW_DRUM_CODE: u8 = 0x7b;
 const FUSER_CODE: u8 = 0x6a;
 
 /// Scans a raw byte slice for a specific supply code pattern to extract its remaining percentage.
-///
-/// Looks for the sequence `[code, 0x01, 0x04]` and interprets the following 4 bytes as a
-/// big-endian integer representing the percentage (scaled by 100).
-fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
-    let pattern = [toner_code, 0x01, 0x04];
+fn find_value_in_brother_bytes(bytes: &[u8], code: u8) -> Option<i64> {
+    let pattern = [code, 0x01, 0x04];
 
     if let Some(pos) = bytes.windows(3).position(|window| window == pattern) {
         let start = pos + 3;
         if start + 4 <= bytes.len() {
             let result_bytes: [u8; 4] = bytes[start..start + 4].try_into().ok()?;
             let value = u32::from_be_bytes(result_bytes);
-
             return Some((value as f32 / 100.0) as i64);
         }
     }
@@ -44,99 +41,97 @@ fn find_value_in_brother_bytes(bytes: &[u8], toner_code: u8) -> Option<i64> {
 }
 
 /// Driver implementation for Brother printers.
-///
-/// Uses a proprietary "maintenance OID" that returns a binary blob containing data for
-/// all consumable supplies (toners, drums, fuser).
 pub struct BrotherDriver;
 
+impl BrotherDriver {
+    /// Fetches the serial number via SNMP.
+    async fn fetch_serial(&self, params: &SnmpClientParams) -> Result<Option<String>, AppError> {
+        let oid = &[1, 3, 6, 1, 2, 1, 43, 5, 1, 1, 17, 1];
+        Ok(Some(get_snmp_value(oid, params).await?))
+    }
+
+    /// Determines the correct OID based on the model and fetches the maintenance binary blob.
+    async fn fetch_maintenance_data(
+        &self,
+        params: &SnmpClientParams,
+        printer_name: &str,
+    ) -> Result<Vec<u8>, AppError> {
+        let old_model = printer_name.contains("HL-5350DN");
+
+        // Select OID based on model generation
+        let oid = if old_model {
+            &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 11, 0] // brInfoNextCare (Legacy)
+        } else {
+            &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0] // Standard
+        };
+
+        get_snmp_value::<Vec<u8>>(oid, params).await
+    }
+
+    /// Parses the binary blob to extract Toner levels.
+    fn extract_toners(&self, bytes: &[u8]) -> Toners {
+        let get_toner =
+            |code| find_value_in_brother_bytes(bytes, code).map(|p| Toner::new(0, 0, Some(p)));
+
+        Toners {
+            black_toner: get_toner(BLACK_TONER_CODE),
+            cyan_toner: get_toner(CYAN_TONER_CODE),
+            magenta_toner: get_toner(MAGENTA_TONER_CODE),
+            yellow_toner: get_toner(YELLOW_TONER_CODE),
+        }
+    }
+
+    /// Parses the binary blob to extract Drum levels.
+    fn extract_drums(&self, bytes: &[u8]) -> Drums {
+        let get_drum =
+            |code| find_value_in_brother_bytes(bytes, code).map(|p| Drum::new(0, 0, Some(p)));
+
+        Drums {
+            black_drum: get_drum(BLACK_DRUM_CODE),
+            cyan_drum: get_drum(CYAN_DRUM_CODE),
+            magenta_drum: get_drum(MAGENTA_DRUM_CODE),
+            yellow_drum: get_drum(YELLOW_DRUM_CODE),
+        }
+    }
+
+    /// Parses the binary blob to extract Fuser level.
+    fn extract_fuser(&self, bytes: &[u8]) -> Option<Fuser> {
+        find_value_in_brother_bytes(bytes, FUSER_CODE).map(|p| Fuser::new(0, 0, Some(p)))
+    }
+}
+
+#[async_trait]
 impl PrinterDriver for BrotherDriver {
-    /// Checks if the printer name contains "brother" (case-insensitive).
     fn is_compatible(&self, printer_name: &str) -> bool {
         printer_name.to_lowercase().contains("brother")
     }
 
-    /// Retrieves supply levels by parsing Brother's proprietary binary data structure.
-    fn get_supplies(
+    async fn get_supplies(
         &self,
         params: &SnmpClientParams,
         printer_name: &str,
     ) -> Result<Printer, AppError> {
-        get_brother_supplies_levels(params, printer_name.to_string())
+        // Fetch Serial Number
+        let serial_number = self.fetch_serial(params).await?;
+
+        // Fetch Maintenance Data
+        let bytes = self.fetch_maintenance_data(params, printer_name).await?;
+
+        // Parse Supplies
+        let toners = self.extract_toners(&bytes);
+        let drums = self.extract_drums(&bytes);
+        let fuser = self.extract_fuser(&bytes);
+
+        Ok(Printer::new(
+            printer_name.to_string(),
+            serial_number,
+            toners,
+            drums,
+            fuser,
+            None, // Reservoir not supported
+            None, // Metrics not supported in this driver version
+        ))
     }
-}
-
-/// Fetches and parses the maintenance OID to populate the [`Printer`] struct.
-///
-/// Supports both standard and legacy (e.g., HL-5350DN) OID variants. Supplies not found
-/// in the byte stream are set to `None`.
-fn get_brother_supplies_levels(
-    ctx: &SnmpClientParams,
-    printer_name: String,
-) -> Result<Printer, AppError> {
-    let old_model = printer_name.contains("HL-5350DN");
-
-    // This OID stores most of the supply information in hexadecimal format
-    let br_info_maintenance_oid = if old_model {
-        &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 11, 0] // brInfoNextCare
-    } else {
-        &[1, 3, 6, 1, 4, 1, 2435, 2, 3, 9, 4, 2, 1, 5, 5, 8, 0]
-    };
-
-    let serial_number_oid = &[1, 3, 6, 1, 2, 1, 43, 5, 1, 1, 17, 1];
-    let serial_number = Some(get_snmp_value(serial_number_oid, ctx)?);
-
-    let bytes = get_snmp_value::<Vec<u8>>(br_info_maintenance_oid, ctx)?;
-
-    let black_toner_percent = find_value_in_brother_bytes(&bytes, BLACK_TONER_CODE);
-    let cyan_toner_percent = find_value_in_brother_bytes(&bytes, CYAN_TONER_CODE);
-    let magenta_toner_percent = find_value_in_brother_bytes(&bytes, MAGENTA_TONER_CODE);
-    let yellow_toner_percent = find_value_in_brother_bytes(&bytes, YELLOW_TONER_CODE);
-
-    let black_drum_percent = find_value_in_brother_bytes(&bytes, BLACK_DRUM_CODE);
-    let cyan_drum_percent = find_value_in_brother_bytes(&bytes, CYAN_DRUM_CODE);
-    let magenta_drum_percent = find_value_in_brother_bytes(&bytes, MAGENTA_DRUM_CODE);
-    let yellow_drum_percent = find_value_in_brother_bytes(&bytes, YELLOW_DRUM_CODE);
-
-    let fuser_percent = find_value_in_brother_bytes(&bytes, FUSER_CODE);
-
-    // Toners
-    let black_toner = black_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
-    let cyan_toner = cyan_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
-    let magenta_toner = magenta_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
-    let yellow_toner = yellow_toner_percent.map(|percent| Toner::new(0, 0, Some(percent)));
-
-    // Drums
-    let black_drum = black_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
-    let cyan_drum = cyan_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
-    let magenta_drum = magenta_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
-    let yellow_drum = yellow_drum_percent.map(|percent| Drum::new(0, 0, Some(percent)));
-
-    // Other
-    let fuser = fuser_percent.map(|percent| Fuser::new(0, 0, Some(percent)));
-
-    let toners = Toners {
-        black_toner,
-        cyan_toner,
-        magenta_toner,
-        yellow_toner,
-    };
-
-    let drums = Drums {
-        black_drum,
-        cyan_drum,
-        magenta_drum,
-        yellow_drum,
-    };
-
-    Ok(Printer::new(
-        printer_name,
-        serial_number,
-        toners,
-        drums,
-        fuser,
-        None,
-        None,
-    ))
 }
 
 #[cfg(test)]
@@ -191,7 +186,6 @@ mod tests {
             None
         );
 
-        // Inexistent code in mono
         assert_eq!(find_value_in_brother_bytes(&bytes_mono, 0x99), None);
 
         // Color
@@ -236,7 +230,6 @@ mod tests {
             Some(99)
         );
 
-        // Inexistent code in color
         assert_eq!(find_value_in_brother_bytes(&bytes_color, 0x99), None);
     }
 

@@ -30,7 +30,7 @@ pub struct CliParams {
 }
 
 /// DNS resolver
-fn resolve_host(host: &str, port: u16) -> Result<Ipv4Addr, AppError> {
+pub fn resolve_host(host: &str, port: u16) -> Result<Ipv4Addr, AppError> {
     if let Ok(ip) = host.parse::<Ipv4Addr>() {
         return Ok(ip);
     }

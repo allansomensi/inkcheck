@@ -1,32 +1,36 @@
-# InkCheck Inventory
-# Define your printers below to access them via alias.
+# InkCheck Configuration File
+# Define your printers below to access them via alias in the CLI.
 
-# Example 1: Standard Printer (SNMP v1/v2c)
+# Example 1: Standard Printer (SNMP v2c)
+# Best for internal networks.
 [[printers]]
 alias = "office"
 host = "192.168.1.50"
 snmp_version = "v2c"
 community = "public"
-timeout = 5
 
 # Example 2: Secure Printer (SNMP v3 - AuthNoPriv)
+# Requires authentication but no data encryption.
 [[printers]]
-alias = "hr-secure"
+alias = "warehouse"
 host = "10.0.0.5"
 snmp_version = "v3"
-security_level = "authNoPriv"
+security_level = "auth-no-priv"
 username = "admin"
 auth_protocol = "sha1"
-auth_password = "my_auth_password"
+auth_password = "your_auth_password"
 
 # Example 3: Ultra Secure Printer (SNMP v3 - AuthPriv)
+# Full Authentication + Encryption (Enterprise standard).
 [[printers]]
-alias = "financial"
+alias = "finance"
 host = "10.0.0.10"
 snmp_version = "v3"
-security_level = "authPriv"
+security_level = "auth-priv"
 username = "admin"
+# Authentication settings
 auth_protocol = "sha256"
-auth_password = "my_auth_password"
+auth_password = "your_auth_password"
+# Privacy (Encryption) settings
 privacy_protocol = "aes128"
-privacy_password = "my_priv_password"
+privacy_password = "your_priv_password"

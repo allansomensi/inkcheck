@@ -28,7 +28,6 @@ pub struct PrinterConfig {
     pub privacy_password: Option<String>,
     pub auth_protocol: Option<String>,
     pub privacy_protocol: Option<String>,
-    pub timeout: Option<u64>,
 }
 
 impl Config {
@@ -118,10 +117,6 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
         if let Ok(privacy_protocol) = PrivacyProtocol::from_str(priv_str, true) {
             args.privacy_protocol = privacy_protocol;
         }
-    }
-
-    if let Some(timeout) = config.timeout {
-        args.timeout = timeout;
     }
 }
 

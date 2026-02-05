@@ -2,7 +2,7 @@ use crate::printer::supply::CalculateLevel;
 use serde::Serialize;
 
 /// Represents a single imaging drum unit, tracking its current usage and maximum capacity.
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Drum {
     pub level: i64,
     pub max_level: i64,
@@ -22,9 +22,8 @@ impl Drum {
 
 /// Aggregates the imaging drums for standard CMYK colors.
 ///
-/// Each slot is optional to support monochrome printers (which only use `black_drum`)
-/// or devices where specific color data is unavailable.
-#[derive(Default, Clone, Serialize)]
+/// Each slot is optional to support monochrome printers or devices where specific color data is unavailable.
+#[derive(Debug, Default, Clone, Serialize)]
 pub struct Drums {
     pub black_drum: Option<Drum>,
     pub cyan_drum: Option<Drum>,

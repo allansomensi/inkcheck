@@ -5,7 +5,7 @@ use serde::Serialize;
 ///
 /// Tracks the current fill level against its maximum capacity to monitor when the
 /// container needs to be emptied or replaced.
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Reservoir {
     pub level: i64,
     pub max_level: i64,

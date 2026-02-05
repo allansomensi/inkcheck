@@ -1,63 +1,54 @@
-/// An error that can occur in this application.
-#[derive(Debug, Clone)]
+use std::fmt;
+
+/// A unified error type for the application.
+#[derive(Debug)]
 pub struct AppError {
     kind: ErrorKind,
 }
 
 impl AppError {
-    /// Creates a new error from an [`ErrorKind`].
-    pub(crate) fn new(kind: ErrorKind) -> AppError {
-        AppError { kind }
+    pub fn new(kind: ErrorKind) -> Self {
+        Self { kind }
     }
 }
 
-/// The kind of an error that can occur.
-#[derive(Debug, Clone)]
-#[non_exhaustive]
+#[derive(Debug)]
 pub enum ErrorKind {
-    /// An error that occurred as a result of parsing CLI arguments.
     Cli(String),
-    /// An I/O error that occurred.
     Io(String),
-    /// An DNS resolution error that occurred.
     DnsResolution(String),
-    /// An error that occurs when failing to convert an OID.
     OidConversion,
-    /// An error that occurs when a type conversion fails.
     TypeMismatch(String),
-    /// An error that occurred during a parsing operation.
     Parse(String),
-    /// An error that occurred during an SNMP request.
     SnmpRequest(String),
-    /// An error for when a requested OID is not found on the device.
     OidNotFound,
-    /// An error for when a specified directory is invalid or does not exist.
     InvalidDirectory,
-    /// An error for when the contents of a directory cannot be read.
     DirectoryRead,
-    /// An error for when an OID string has an invalid format.
     InvalidOidFormat,
-    /// An error for when a printer model is not supported.
     UnsupportedPrinter(String),
 }
 
 impl std::error::Error for AppError {}
 
-impl std::fmt::Display for AppError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::Cli(s) => write!(f, "CLI error: {s}. Please check the provided arguments."),
-            ErrorKind::Io(s) => write!(f, "I/O error: {s}."),
-            ErrorKind::DnsResolution(s) => write!(f, "DNS resolution failed for '{s}'."),
-            ErrorKind::OidConversion => write!(f, "Failed to convert OID. Ensure the format is valid and numeric."),
-            ErrorKind::TypeMismatch(s) => write!(f, "Type conversion failed: {s}."),
-            ErrorKind::Parse(s) => write!(f, "Parsing error: {s}. Please check the input format."),
-            ErrorKind::SnmpRequest(s) => write!(f, "SNMP request failed: {s}. Please verify the network connection and SNMP agent availability."),
-            ErrorKind::OidNotFound => write!(f, "OID not found. Verify that the correct OID is being used for the target device."),
-            ErrorKind::InvalidDirectory => write!(f, "The specified directory is invalid or does not exist."),
-            ErrorKind::DirectoryRead => write!(f, "Failed to read the contents of the specified directory."),
-            ErrorKind::InvalidOidFormat => write!(f, "Invalid OID format. Segments must be numeric and separated by dots."),
-            ErrorKind::UnsupportedPrinter(s) => write!(f, "Printer model '{s}' is not registered. You can manually add the printer and its corresponding OIDs."),
+            ErrorKind::Cli(s) => write!(f, "Configuration error: {s}"),
+            ErrorKind::Io(s) => write!(f, "I/O error: {s}"),
+            ErrorKind::DnsResolution(s) => write!(f, "Could not resolve hostname '{s}'"),
+            ErrorKind::OidConversion => write!(f, "OID conversion failed (check numeric format)"),
+            ErrorKind::TypeMismatch(s) => write!(f, "Data type mismatch: {s}"),
+            ErrorKind::Parse(s) => write!(f, "Failed to parse input: {s}"),
+            ErrorKind::SnmpRequest(s) => write!(f, "SNMP communication failed: {s}"),
+            ErrorKind::OidNotFound => write!(f, "Requested OID not found on device"),
+            ErrorKind::InvalidDirectory => write!(f, "Invalid or inaccessible directory path"),
+            ErrorKind::DirectoryRead => write!(f, "Unable to read directory contents"),
+            ErrorKind::InvalidOidFormat => {
+                write!(f, "Malformed OID (must be numeric/dot-separated)")
+            }
+            ErrorKind::UnsupportedPrinter(s) => {
+                write!(f, "Printer model '{s}' is not officially supported")
+            }
         }
     }
 }
@@ -71,5 +62,11 @@ impl From<std::io::Error> for AppError {
 impl From<clap::Error> for AppError {
     fn from(err: clap::Error) -> Self {
         AppError::new(ErrorKind::Cli(err.to_string()))
+    }
+}
+
+impl From<snmp2::Error> for AppError {
+    fn from(err: snmp2::Error) -> Self {
+        AppError::new(ErrorKind::SnmpRequest(format!("{err:?}")))
     }
 }

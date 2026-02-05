@@ -6,44 +6,72 @@ mod printer;
 mod snmp;
 mod utils;
 
-use error::AppError;
+use clap::Parser;
+use cli::args::Args;
+use error::{AppError, ErrorKind};
+use openssl::provider::Provider;
 use std::process;
-use std::thread;
 
-/// Stack size for the SNMP thread (4MB).
-/// Increased size is required to prevent stack overflow during SNMP parsing.
-const WORKER_STACK_SIZE: usize = 4 * 1024 * 1024;
+#[tokio::main]
+async fn main() {
+    // Load legacy provider for older algorithms.
+    let _legacy_guard = Provider::try_load(None, "legacy", true)
+        .map(Some)
+        .unwrap_or_else(|e| {
+            eprintln!("Warning: Failed to load OpenSSL Legacy Provider: {e}");
+            None // Continue execution without legacy support
+        });
 
-/// Application entry point.
-fn main() {
-    if let Err(e) = run() {
-        eprintln!("Application error: {e}");
+    if let Err(e) = run().await {
+        eprintln!("Error: {e}");
         process::exit(1);
     }
 }
 
-/// Orchestrates the application flow: parses CLI arguments, executes SNMP operations in a dedicated thread with increased stack size, and displays the results.
-fn run() -> Result<(), AppError> {
-    let params = cli::args::parse_args()
-        .map_err(|e| AppError::new(error::ErrorKind::Parse(format!("{e}"))))?;
+/// Orchestrates the application flow: configuration loading, argument parsing,
+/// and execution of the main logic.
+async fn run() -> Result<(), AppError> {
+    let mut args = Args::parse();
 
-    let snmp_params = params.snmp.clone();
+    if args.init {
+        let path = config::Config::create_default_template()
+            .map_err(|e| AppError::new(ErrorKind::Io(format!("Failed to create config: {e}"))))?;
 
-    let handler = thread::Builder::new()
-        .name("snmp-worker".into())
-        .stack_size(WORKER_STACK_SIZE)
-        .spawn(move || snmp::get_printer_values(&snmp_params))
-        .map_err(|e| {
-            AppError::new(error::ErrorKind::SnmpRequest(format!(
-                "Failed to spawn SNMP worker thread: {e}"
-            )))
-        })?;
+        println!("✅ Configuration file created at: {path:?}");
+        return Ok(());
+    }
 
-    let printer = handler.join().map_err(|_| {
-        AppError::new(error::ErrorKind::SnmpRequest(
-            "Critical error: The SNMP worker thread crashed.".to_string(),
-        ))
-    })??;
+    // Load inventory/config and merge with CLI args
+    let inventory = config::Config::load().unwrap_or_default();
+
+    // If a host is provided, check if it matches an alias
+    if let Some(host_input) = &args.host {
+        if let Some(saved_printer) = inventory.find_by_alias(host_input) {
+            println!(
+                "📂 Loading saved configuration for: '{}'",
+                saved_printer.alias
+            );
+            config::apply_config_to_args(&mut args, saved_printer);
+        }
+    }
+
+    let host = args
+        .host
+        .as_ref()
+        .ok_or_else(|| AppError::new(ErrorKind::Cli("Host is required.".to_string())))?;
+
+    let ip = cli::resolve_host(host, args.port)?;
+
+    let params = cli::AppParams {
+        app: cli::CliParams {
+            theme: args.theme,
+            output: args.output.clone(),
+        },
+        snmp: snmp::SnmpClientParams::from_args(&args, ip),
+    };
+
+    // Execute core logic
+    let printer = snmp::get_printer_values(&params.snmp).await?;
 
     cli::display::show_printer_values(
         printer,
