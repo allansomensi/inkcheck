@@ -4,8 +4,9 @@ use snmp2::{Oid, Value};
 
 /// Retrieves and converts a single SNMP value for a specific OID.
 ///
-/// Handles session initialization and includes automatic retry logic (up to 3 times)
-/// for transient SNMPv3 USM/Security context errors.
+/// This function acts as the core SNMP data fetcher. It handles session initialization
+/// and implements robust automatic retry logic (limit 5) to handle SNMPv3 complexity,
+/// specifically Time Synchronization (AuthUpdated) and Engine Discovery (EngineBootsNotProvided).
 pub async fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
 where
     T: FromSnmpValue,
@@ -14,7 +15,7 @@ where
 
     let oid_obj = Oid::from(oid).map_err(|_| AppError::new(ErrorKind::OidConversion))?;
 
-    let max_retries = 3;
+    let max_retries = 5;
 
     for _ in 0..max_retries {
         match session.get(&oid_obj).await {
@@ -25,20 +26,29 @@ where
                     return Err(AppError::new(ErrorKind::OidNotFound));
                 }
             }
-
+            // Case 1: Printer sent "Report" with correct time. Library updated internally. Retry.
             Err(snmp2::Error::AuthUpdated) => {
                 continue;
             }
+
+            // Case 2: Library refused to send because it has no Boots/Time yet.
+            // ACTION: Force discovery (init) again to fetch them.
+            Err(snmp2::Error::AuthFailure(snmp2::v3::AuthErrorKind::EngineBootsNotProvided)) => {
+                let _ = session.init().await;
+                continue;
+            }
+
+            // Other errors (Timeout, Host Unreachable) should fail immediately
             Err(e) => return Err(AppError::new(ErrorKind::SnmpRequest(e.to_string()))),
         }
     }
 
     Err(AppError::new(ErrorKind::SnmpRequest(
-        "Max retries exceeded (AuthUpdated loop)".to_string(),
+        "Max retries exceeded during SNMPv3 discovery".to_string(),
     )))
 }
 
-/// A trait for converting SNMP `Value` types into Rust types.
+/// A trait for converting SNMP [`Value`] types into Rust types.
 ///
 /// This trait defines a method to consume a given SNMP [`Value`] and convert it to a specific Rust type.
 /// It allows SNMP data to be easily mapped to the appropriate types in the application.
