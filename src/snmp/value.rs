@@ -1,50 +1,63 @@
 use super::{create_snmp_session, SnmpClientParams};
 use crate::error::{AppError, ErrorKind};
 use snmp2::{Oid, Value};
+use tokio::time::timeout;
 
-/// Retrieves and converts a single SNMP value for a specific OID.
+/// Retrieves a single SNMP value for the specified OID, handling session initialization and retries.
 ///
-/// This function acts as the core SNMP data fetcher. It handles session initialization
-/// and implements robust automatic retry logic (limit 5) to handle SNMPv3 complexity,
-/// specifically Time Synchronization (AuthUpdated) and Engine Discovery (EngineBootsNotProvided).
+/// This function implements automatic recovery for common SNMPv3 handshake issues
+/// (Time Synchronization and Engine Discovery) and enforces strict timeouts on
+/// network operations to prevent blocking.
 pub async fn get_snmp_value<T>(oid: &[u64], ctx: &SnmpClientParams) -> Result<T, AppError>
 where
     T: FromSnmpValue,
 {
     let mut session = create_snmp_session(ctx).await?;
-
     let oid_obj = Oid::from(oid).map_err(|_| AppError::new(ErrorKind::OidConversion))?;
 
-    let max_retries = 5;
+    for _ in 1..=ctx.retries {
+        let result = timeout(ctx.timeout, session.get(&oid_obj)).await;
 
-    for _ in 0..max_retries {
-        match session.get(&oid_obj).await {
-            Ok(mut response) => {
-                if let Some((_oid, value)) = response.varbinds.next() {
-                    return T::from_snmp_value(value);
-                } else {
-                    return Err(AppError::new(ErrorKind::OidNotFound));
+        match result {
+            // 1. Network Timeout
+            Err(_) => continue,
+
+            // 2. SNMP Library Errors (Protocol level)
+            Ok(Err(error)) => match error {
+                // Auto-recovery: Time synchronization updated internally
+                snmp2::Error::AuthUpdated => continue,
+
+                // Auto-recovery: Missing Engine Boots (requires re-discovery)
+                snmp2::Error::AuthFailure(snmp2::v3::AuthErrorKind::EngineBootsNotProvided) => {
+                    let _ = timeout(ctx.timeout, session.init()).await;
+                    continue;
                 }
-            }
-            // Case 1: Printer sent "Report" with correct time. Library updated internally. Retry.
-            Err(snmp2::Error::AuthUpdated) => {
-                continue;
-            }
 
-            // Case 2: Library refused to send because it has no Boots/Time yet.
-            // ACTION: Force discovery (init) again to fetch them.
-            Err(snmp2::Error::AuthFailure(snmp2::v3::AuthErrorKind::EngineBootsNotProvided)) => {
-                let _ = session.init().await;
-                continue;
-            }
+                // Fatal errors
+                _ => return Err(AppError::new(ErrorKind::SnmpRequest(error.to_string()))),
+            },
 
-            // Other errors (Timeout, Host Unreachable) should fail immediately
-            Err(e) => return Err(AppError::new(ErrorKind::SnmpRequest(e.to_string()))),
+            // 3. Successful Response
+            Ok(Ok(mut response)) => {
+                // Check for logical SNMP errors (e.g., GenErr, NoAccess)
+                if response.error_status != 0 {
+                    return Err(AppError::new(ErrorKind::SnmpRequest(format!(
+                        "SNMP logical error: code {}",
+                        response.error_status
+                    ))));
+                }
+
+                // Extract value
+                return match response.varbinds.next() {
+                    Some((_, value)) => T::from_snmp_value(value),
+                    None => Err(AppError::new(ErrorKind::OidNotFound)),
+                };
+            }
         }
     }
 
     Err(AppError::new(ErrorKind::SnmpRequest(
-        "Max retries exceeded during SNMPv3 discovery".to_string(),
+        "Max retries exceeded or connection timed out".to_string(),
     )))
 }
 
