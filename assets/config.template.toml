@@ -1,16 +1,23 @@
 # InkCheck Configuration File
 # Define your printers below to access them via alias in the CLI.
 
+# ==========================================
 # Example 1: Standard Printer (SNMP v2c)
 # Best for internal networks.
+# ==========================================
 [[printers]]
 alias = "office"
 host = "192.168.1.50"
 snmp_version = "v2c"
 community = "public"
+# Optional connection tuning
+timeout = 2
+retries = 2
 
+# ==========================================
 # Example 2: Secure Printer (SNMP v3 - AuthNoPriv)
 # Requires authentication but no data encryption.
+# ==========================================
 [[printers]]
 alias = "warehouse"
 host = "10.0.0.5"
@@ -20,18 +27,54 @@ username = "admin"
 auth_protocol = "sha1"
 auth_password = "your_auth_password"
 
-# Example 3: Ultra Secure Printer (SNMP v3 - AuthPriv)
-# Full Authentication + Encryption (Enterprise standard).
+# ==========================================
+# Example 3: Ultra Secure (Enterprise Standard)
+# SHA-256 Auth + AES-128 Encryption.
+# ==========================================
 [[printers]]
 alias = "finance"
 host = "10.0.0.10"
 snmp_version = "v3"
 security_level = "auth-priv"
-context_name = "v3context"
 username = "admin"
-# Authentication settings
+context_name = "bridge1"
+# Authentication
 auth_protocol = "sha256"
 auth_password = "your_auth_password"
-# Privacy (Encryption) settings
+# Privacy (Encryption)
 privacy_protocol = "aes128"
 privacy_password = "your_priv_password"
+
+# ==========================================
+# Example 4: Legacy Device
+# Using weak crypto (MD5/DES) and aggressive retries.
+# ==========================================
+[[printers]]
+alias = "legacy-printer"
+host = "192.168.1.200"
+snmp_version = "v3"
+security_level = "auth-priv"
+username = "root"
+# Force empty context for some legacy firmwares
+context_name = ""
+# Legacy protocols
+auth_protocol = "md5"
+auth_password = "legacy_password"
+privacy_protocol = "des"
+privacy_password = "legacy_password"
+# Stability settings
+timeout = 5
+retries = 5
+
+# ==========================================
+# Example 5: Detailed Monitoring & Custom Port
+# Fetch extra supplies (fusers/drums) and usage metrics.
+# ==========================================
+[[printers]]
+alias = "plotter"
+host = "10.0.0.99"
+port = 1161           # Custom SNMP port
+snmp_version = "v2c"
+community = "public"
+extra_supplies = true # Show drums, belts, fusers
+metrics = true        # Show page counts/usage stats

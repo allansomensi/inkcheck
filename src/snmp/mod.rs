@@ -8,7 +8,7 @@ use snmp2::{
     v3::{self},
     AsyncSession,
 };
-use std::{net::Ipv4Addr, path::PathBuf};
+use std::{net::Ipv4Addr, path::PathBuf, time::Duration};
 use value::get_snmp_value;
 use version::SnmpVersion;
 
@@ -30,6 +30,8 @@ pub struct SnmpClientParams {
     pub security_level: SecurityLevel,
     pub context_name: String,
     pub version: SnmpVersion,
+    pub timeout: Duration,
+    pub retries: u8,
     pub data_dir: Option<PathBuf>,
     pub extra_supplies: bool,
     pub metrics: bool,
@@ -50,6 +52,8 @@ impl SnmpClientParams {
             security_level: args.security_level,
             context_name: args.context_name.clone(),
             version: args.snmp_version,
+            timeout: Duration::from_secs(args.timeout),
+            retries: args.retries,
             data_dir: args.data_dir.clone(),
             extra_supplies: args.extra_supplies,
             metrics: args.metrics,

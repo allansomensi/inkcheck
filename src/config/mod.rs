@@ -29,6 +29,10 @@ pub struct PrinterConfig {
     pub privacy_password: Option<String>,
     pub auth_protocol: Option<String>,
     pub privacy_protocol: Option<String>,
+    pub extra_supplies: Option<bool>,
+    pub metrics: Option<bool>,
+    pub timeout: Option<u64>,
+    pub retries: Option<u8>,
 }
 
 impl Config {
@@ -122,6 +126,22 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
         if let Ok(privacy_protocol) = PrivacyProtocol::from_str(priv_str, true) {
             args.privacy_protocol = privacy_protocol;
         }
+    }
+
+    if let Some(extra) = config.extra_supplies {
+        args.extra_supplies = extra;
+    }
+
+    if let Some(metrics) = config.metrics {
+        args.metrics = metrics;
+    }
+
+    if let Some(timeout) = config.timeout {
+        args.timeout = timeout;
+    }
+
+    if let Some(retries) = config.retries {
+        args.retries = retries;
     }
 }
 
