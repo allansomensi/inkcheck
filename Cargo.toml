@@ -11,10 +11,12 @@ license = "MIT"
 edition = "2021"
 
 [package.metadata.wix]
+product-icon = "wix/Product.ico"
+banner = "wix/Banner.bmp"
 upgrade-guid = "254DCA48-7953-4CDA-B861-D085F2827856"
 path-guid = "93EC6DB7-1BF8-4914-BEFA-22F2910B5852"
 license = false
-eula = false
+eula = "wix/Eula.rtf"
 
 [dependencies]
 async-trait = "0.1.89"
