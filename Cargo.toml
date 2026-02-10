@@ -10,6 +10,12 @@ keywords = ["cli", "snmp", "printer-management"]
 license = "MIT"
 edition = "2021"
 
+[package.metadata.wix]
+upgrade-guid = "254DCA48-7953-4CDA-B861-D085F2827856"
+path-guid = "93EC6DB7-1BF8-4914-BEFA-22F2910B5852"
+license = false
+eula = false
+
 [dependencies]
 async-trait = "0.1.89"
 chrono = "0.4.43"
@@ -39,3 +45,8 @@ features = [
 
 [patch.crates-io]
 snmp2 = { git = "https://github.com/allansomensi/snmp2.git", rev = "a2db1b8add935d2419c6e6ec64d228a7fabe026c" }
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
