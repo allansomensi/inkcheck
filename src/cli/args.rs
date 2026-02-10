@@ -17,7 +17,7 @@ pub struct Args {
     pub host: Option<String>,
 
     /// Initialize a default configuration file.
-    #[arg(long)]
+    #[arg(long, exclusive = true)]
     pub init: bool,
 
     /// Protocol Version.
