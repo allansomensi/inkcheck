@@ -1,7 +1,7 @@
 # Inkcheck 🖨️
 
 [![Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
+[![Version](https://img.shields.io/badge/version-0.3.1-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Inkcheck** is a powerful and fast CLI tool built in Rust to monitor printer supply levels via **SNMP**.
@@ -22,7 +22,16 @@ It supports both **SNMP v1/v2c/v3**, allowing you to check toners, drums, fusers
 - **Security:** Granular control over SNMPv3 security levels (AuthPriv, AuthNoPriv, etc.) and context names.
 - **Theming:** Multiple visual themes for the terminal.
 
-## 🚀 Getting Started
+## 📦 Installation
+
+You can find pre-built binaries, installers (`.msi`), and automated installation scripts (`.ps1`, `.sh`) on the **Releases** page.
+
+[![Download Latest Release](https://img.shields.io/github/v/release/allansomensi/inkcheck?label=Download%20Latest%20Version&style=for-the-badge&color=blue)](https://github.com/allansomensi/inkcheck/releases/latest)
+
+> **Windows Users:** If you encounter a "SmartScreen" warning when running the MSI, click **"More info"** → **"Run anyway"**. This is normal for unsigned open-source tools.
+
+<details>
+<summary><strong>Or install from source (Cargo)</strong></summary>
 
 ### Prerequisites
 - **Rust** (latest stable version).
@@ -33,18 +42,17 @@ git clone https://github.com/allansomensi/inkcheck.git
 cd inkcheck
 ```
 
-### Development Setup
+### Install
+```bash
+cargo install --path .
+```
+</details>
+
+## 💻 Development Setup
 To use the development scripts, install `just`:
 
 ```elixir
 cargo install just
-```
-
-## 📦 Installation
-To install from the source:
-
-```elixir
-cargo install --path .
 ```
 
 ## ⚙️ Configuration (Inventory)

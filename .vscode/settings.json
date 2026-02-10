@@ -4,6 +4,7 @@
         "printer": "content",
         "special": "custom",
         "snmp": "connection",
-        "supply": "container"
+        "supply": "container",
+        "wix": "windows"
     }
 }
