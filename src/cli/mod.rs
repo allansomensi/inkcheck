@@ -7,6 +7,7 @@ use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 use theme::CliTheme;
 
 pub mod args;
+pub mod commands;
 pub mod display;
 mod output;
 pub mod progress;

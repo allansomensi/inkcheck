@@ -33,6 +33,15 @@ async fn main() {
 async fn run() -> Result<(), AppError> {
     let mut args = Args::parse();
 
+    if let Some(cmd) = &args.command {
+        match cmd {
+            cli::commands::Commands::Scan { timeout } => {
+                printer::scan::run_mdns_scan(*timeout).await;
+                return Ok(());
+            }
+        }
+    }
+
     if args.init {
         let path = config::Config::create_default_template()
             .map_err(|e| AppError::new(ErrorKind::Io(format!("Failed to create config: {e}"))))?;
@@ -41,10 +50,8 @@ async fn run() -> Result<(), AppError> {
         return Ok(());
     }
 
-    // Load inventory/config and merge with CLI args
     let inventory = config::Config::load().unwrap_or_default();
 
-    // If a host is provided, check if it matches an alias
     if let Some(host_input) = &args.host {
         if let Some(saved_printer) = inventory.find_by_alias(host_input) {
             println!(
@@ -55,10 +62,11 @@ async fn run() -> Result<(), AppError> {
         }
     }
 
-    let host = args
-        .host
-        .as_ref()
-        .ok_or_else(|| AppError::new(ErrorKind::Cli("Host is required.".to_string())))?;
+    let host = args.host.as_ref().ok_or_else(|| {
+        AppError::new(ErrorKind::Cli(
+            "Host is required unless using a subcommand (like 'scan') or '--init'.".to_string(),
+        ))
+    })?;
 
     let ip = cli::resolve_host(host, args.port)?;
 
@@ -70,7 +78,6 @@ async fn run() -> Result<(), AppError> {
         snmp: snmp::SnmpClientParams::from_args(&args, ip),
     };
 
-    // Execute core logic
     let printer = snmp::get_printer_values(&params.snmp).await?;
 
     cli::display::show_printer_values(

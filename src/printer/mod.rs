@@ -5,6 +5,7 @@ use serde::Serialize;
 
 pub mod driver;
 pub mod load;
+pub mod scan;
 pub mod supply;
 
 /// Tracks printing usage statistics including total, monochrome, and color impressions.

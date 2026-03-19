@@ -1,5 +1,5 @@
 use crate::{
-    cli::{output::OutputFormat, theme::CliTheme},
+    cli::{commands::Commands, output::OutputFormat, theme::CliTheme},
     snmp::{
         security::{AuthProtocol, PrivacyProtocol, SecurityLevel},
         version::SnmpVersion,
@@ -12,8 +12,10 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
     /// IP address, hostname, or configuration alias of the printer.
-    #[arg(required_unless_present = "init")]
     pub host: Option<String>,
 
     /// Initialize a default configuration file.
