@@ -1,7 +1,7 @@
 # Inkcheck 🖨️
 
 [![Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/version-0.3.2-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Inkcheck** is a powerful and fast CLI tool built in Rust to monitor printer supply levels via **SNMP**.
@@ -14,6 +14,7 @@ It supports both **SNMP v1/v2c/v3**, allowing you to check toners, drums, fusers
 
 - **Async Core:** Built on the Tokio runtime for non-blocking, high-performance SNMP requests.
 - **Protocol Support:** Full support for SNMP v1, v2c, and v3.
+- **Network Discovery:** Effortlessly find local network printers using mDNS.
 - **Inventory:** Manage your printers via a configuration file and query them by alias.
 - **Detailed Supplies:** Checks Toner, Drum, Fuser, and Waste Reservoir levels.
 - **Metrics:** Optional display of total, mono, and color impression counts.
@@ -90,8 +91,11 @@ inkcheck reception
 Run with the following command:
 
 ```elixir
-inkcheck [HOST OR ALIAS] [OPTIONS]
+inkcheck [COMMAND OR HOST OR ALIAS] [OPTIONS]
 ```
+
+### Commands
+- `scan`                             - Discovers printers on the local network using mDNS.
 
 ### General Options
 - `--init`                           - Initialize the configuration file
@@ -121,6 +125,11 @@ inkcheck [HOST OR ALIAS] [OPTIONS]
 - `-X, --privacy-password [PASS]`    - Privacy Password
 
 ### Examples:
+To discover printers on your local network with a custom timeout of 10 seconds:
+```elixir
+inkcheck scan --timeout 10
+```
+
 To check the supply levels of a printer at `192.168.1.10`, using the `moon` theme, displaying `extra supplies`, and setting a `timeout` of 10 seconds:
 
 ```elixir
