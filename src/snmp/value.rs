@@ -1,4 +1,4 @@
-use super::{create_snmp_session, SnmpClientParams};
+use super::{SnmpClientParams, create_snmp_session};
 use crate::error::{AppError, ErrorKind};
 use snmp2::{Oid, Value};
 use tokio::time::timeout;

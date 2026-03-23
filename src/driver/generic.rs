@@ -1,18 +1,18 @@
 use crate::{
     error::{AppError, ErrorKind},
     printer::{
+        Metrics, Printer,
         driver::PrinterDriver,
         load::load_printer,
         supply::{
+            PrinterSupply,
             drum::{Drum, Drums},
             fuser::Fuser,
             reservoir::Reservoir,
             toner::{Toner, TonerColor, Toners},
-            PrinterSupply,
         },
-        Metrics, Printer,
     },
-    snmp::{value::get_snmp_value, SnmpClientParams},
+    snmp::{SnmpClientParams, value::get_snmp_value},
     utils::parse_oid_to_vec,
 };
 use async_trait::async_trait;

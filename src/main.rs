@@ -43,14 +43,14 @@ async fn run() -> Result<(), AppError> {
 
     let inventory = config::Config::load().unwrap_or_default();
 
-    if let Some(host_input) = &args.host {
-        if let Some(saved_printer) = inventory.find_by_alias(host_input) {
-            println!(
-                "📂 Loading saved configuration for: '{}'",
-                saved_printer.alias
-            );
-            config::apply_config_to_args(&mut args, saved_printer);
-        }
+    if let Some(host_input) = &args.host
+        && let Some(saved_printer) = inventory.find_by_alias(host_input)
+    {
+        println!(
+            "📂 Loading saved configuration for: '{}'",
+            saved_printer.alias
+        );
+        config::apply_config_to_args(&mut args, saved_printer);
     }
 
     let host = args.host.as_ref().ok_or_else(|| {

@@ -42,10 +42,8 @@ pub fn show_printer_values(
     // Header
     println!("{} {}", "Printer:".bright_cyan().bold(), printer.name);
 
-    if extra_supplies {
-        if let Some(serial) = &printer.serial_number {
-            println!("{} {serial}", "Serial:".bright_cyan().bold());
-        }
+    if extra_supplies && let Some(serial) = &printer.serial_number {
+        println!("{} {serial}", "Serial:".bright_cyan().bold());
     }
     println!();
 
@@ -87,22 +85,20 @@ pub fn show_printer_values(
     }
 
     // Metrics
-    if metrics {
-        if let Some(m) = &printer.metrics {
-            println!("\n\n--> {}", "Metrics:".bright_white().bold());
+    if metrics && let Some(m) = &printer.metrics {
+        println!("\n\n--> {}", "Metrics:".bright_white().bold());
 
-            if let Some(total) = m.total_impressions {
-                println!(
-                    "\n{} {total} pages",
-                    "Total impressions:".bright_cyan().bold()
-                );
-            }
-            if let Some(mono) = m.mono_impressions {
-                println!("{} {mono} pages", "Mono:".bright_cyan().bold());
-            }
-            if let Some(color) = m.color_impressions {
-                println!("{} {color} pages", "Color:".bright_cyan().bold());
-            }
+        if let Some(total) = m.total_impressions {
+            println!(
+                "\n{} {total} pages",
+                "Total impressions:".bright_cyan().bold()
+            );
+        }
+        if let Some(mono) = m.mono_impressions {
+            println!("{} {mono} pages", "Mono:".bright_cyan().bold());
+        }
+        if let Some(color) = m.color_impressions {
+            println!("{} {color} pages", "Color:".bright_cyan().bold());
         }
     }
 

@@ -1,12 +1,12 @@
 use crate::{
     cli::args::Args,
     error::{AppError, ErrorKind},
-    printer::{driver::DriverManager, Printer},
+    printer::{Printer, driver::DriverManager},
     snmp::security::{AuthProtocol, PrivacyProtocol, SecurityLevel},
 };
 use snmp2::{
-    v3::{self},
     AsyncSession,
+    v3::{self},
 };
 use std::{net::Ipv4Addr, path::PathBuf, time::Duration};
 use value::get_snmp_value;

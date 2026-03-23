@@ -1,15 +1,15 @@
 use crate::{
     error::AppError,
     printer::{
+        Printer,
         driver::PrinterDriver,
         supply::{
             drum::{Drum, Drums},
             fuser::Fuser,
             toner::{Toner, Toners},
         },
-        Printer,
     },
-    snmp::{value::get_snmp_value, SnmpClientParams},
+    snmp::{SnmpClientParams, value::get_snmp_value},
 };
 use async_trait::async_trait;
 

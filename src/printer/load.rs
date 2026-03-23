@@ -1,5 +1,5 @@
 use crate::error::{AppError, ErrorKind};
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use serde_json::Value;
 use std::{fs, path::PathBuf};
 

@@ -84,20 +84,20 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
         args.port = port;
     }
 
-    if let Some(v_str) = &config.snmp_version {
-        if let Ok(v) = SnmpVersion::from_str(v_str, true) {
-            args.snmp_version = v;
-        }
+    if let Some(v_str) = &config.snmp_version
+        && let Ok(v) = SnmpVersion::from_str(v_str, true)
+    {
+        args.snmp_version = v;
     }
 
     if let Some(comm) = &config.community {
         args.community = comm.clone();
     }
 
-    if let Some(sec_str) = &config.security_level {
-        if let Ok(security_level) = SecurityLevel::from_str(sec_str, true) {
-            args.security_level = security_level;
-        }
+    if let Some(sec_str) = &config.security_level
+        && let Ok(security_level) = SecurityLevel::from_str(sec_str, true)
+    {
+        args.security_level = security_level;
     }
 
     if let Some(username) = &config.username {
@@ -116,16 +116,16 @@ pub fn apply_config_to_args(args: &mut Args, config: &PrinterConfig) {
         args.privacy_password = Some(privacy_password.clone());
     }
 
-    if let Some(auth_str) = &config.auth_protocol {
-        if let Ok(auth_protocol) = AuthProtocol::from_str(auth_str, true) {
-            args.auth_protocol = auth_protocol;
-        }
+    if let Some(auth_str) = &config.auth_protocol
+        && let Ok(auth_protocol) = AuthProtocol::from_str(auth_str, true)
+    {
+        args.auth_protocol = auth_protocol;
     }
 
-    if let Some(priv_str) = &config.privacy_protocol {
-        if let Ok(privacy_protocol) = PrivacyProtocol::from_str(priv_str, true) {
-            args.privacy_protocol = privacy_protocol;
-        }
+    if let Some(priv_str) = &config.privacy_protocol
+        && let Ok(privacy_protocol) = PrivacyProtocol::from_str(priv_str, true)
+    {
+        args.privacy_protocol = privacy_protocol;
     }
 
     if let Some(extra) = config.extra_supplies {

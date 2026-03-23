@@ -8,7 +8,7 @@ repository = "https://github.com/allansomensi/inkcheck"
 readme = "README.md"
 keywords = ["cli", "snmp", "printer-management"]
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [package.metadata.wix]
 product-icon = "wix/Product.ico"

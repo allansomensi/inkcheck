@@ -1,5 +1,5 @@
 use crate::printer::supply::{
-    drum::Drums, fuser::Fuser, reservoir::Reservoir, toner::Toners, CalculateLevel,
+    CalculateLevel, drum::Drums, fuser::Fuser, reservoir::Reservoir, toner::Toners,
 };
 use serde::Serialize;
 
@@ -76,8 +76,8 @@ impl Printer {
 mod tests {
     use super::Printer;
     use crate::printer::{
-        supply::{drum::Drum, fuser::Fuser, reservoir::Reservoir, toner::Toner},
         Drums, Toners,
+        supply::{drum::Drum, fuser::Fuser, reservoir::Reservoir, toner::Toner},
     };
 
     #[test]
@@ -208,20 +208,24 @@ mod tests {
             None,
         );
 
-        assert!(printer
-            .toners
-            .black_toner
-            .as_ref()
-            .unwrap()
-            .level_percent
-            .is_none());
-        assert!(printer
-            .drums
-            .black_drum
-            .as_ref()
-            .unwrap()
-            .level_percent
-            .is_none());
+        assert!(
+            printer
+                .toners
+                .black_toner
+                .as_ref()
+                .unwrap()
+                .level_percent
+                .is_none()
+        );
+        assert!(
+            printer
+                .drums
+                .black_drum
+                .as_ref()
+                .unwrap()
+                .level_percent
+                .is_none()
+        );
 
         printer.calculate_all_levels();
 
