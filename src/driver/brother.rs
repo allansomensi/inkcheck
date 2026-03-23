@@ -34,7 +34,7 @@ fn find_value_in_brother_bytes(bytes: &[u8], code: u8) -> Option<i64> {
         if start + 4 <= bytes.len() {
             let result_bytes: [u8; 4] = bytes[start..start + 4].try_into().ok()?;
             let value = u32::from_be_bytes(result_bytes);
-            return Some((value as f32 / 100.0) as i64);
+            return Some((value / 100) as i64);
         }
     }
     None

@@ -18,7 +18,7 @@ git checkout -b your-feature-branch
 
 ### 3. Adding Printer OIDs 🖨️
 
-In the `src/data` directory, you'll find JSON files containing **SNMP OIDs** for different printer brands. These OIDs are crucial for retrieving supply data from printers.
+In the `assets/data` directory, you'll find JSON files containing **SNMP OIDs** for different printer brands. These OIDs are crucial for retrieving supply data from printers.
 
 If you'd like to contribute additional printer models, please add the OIDs for those models to the appropriate JSON file in the src/data directory. Contributions of new printer OIDs are highly appreciated, as they help expand the compatibility to support more printer models.
 
@@ -42,25 +42,30 @@ For example, in the case of a **Xerox** printer:
 }
 ```
 
-For a printer like the **B431**, the fields must still be present, even if some values are empty:
+For a printer like the **B431**, fields that are not in use can either be included as empty values or omitted entirely.
 
 ```json
 {
     "B431": {
+        "info": {
+            "serial_number": "1.3.6.1.4.1.2001.1.1.1.1.11.1.10.45.0"
+        },
         "toner": {
-            "black": { "level": "1.3.6.1.2.1.43.11.1.1.9.1.1", "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.1" },
-            "cyan": { "level": "", "max_level": "" },
-            "magenta": { "level": "", "max_level": "" },
-            "yellow": { "level": "", "max_level": "" }
+            "black": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.1",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.1"
+            }
         },
         "drum": {
-            "black": { "level": "1.3.6.1.2.1.43.11.1.1.9.1.2", "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.2" },
-            "cyan": { "level": "", "max_level": "" },
-            "magenta": { "level": "", "max_level": "" },
-            "yellow": { "level": "", "max_level": "" }
+            "black": {
+                "level": "1.3.6.1.2.1.43.11.1.1.9.1.2",
+                "max_level": "1.3.6.1.2.1.43.11.1.1.8.1.2"
+            }
         },
-        "fuser": { "level": "", "max_level": "" },
-        "reservoir": { "level": "", "max_level": "" }
+        "metrics": {
+            "total_impressions": "1.3.6.1.4.1.2001.1.1.1.1.11.1.10.130.0",
+            "mono_impressions": "1.3.6.1.4.1.2001.1.1.1.1.11.1.10.130.0"
+        }
     }
 }
 

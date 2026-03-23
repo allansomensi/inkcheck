@@ -68,51 +68,41 @@ impl GenericDriver {
         oids: &Value,
         params: &SnmpClientParams,
     ) -> Result<Toners, AppError> {
-        let black_toner = self
-            .fetch_single_supply(
+        let (black, cyan, magenta, yellow) = tokio::try_join!(
+            self.fetch_single_supply(
                 oids,
                 params,
                 PrinterSupply::Toner,
                 Some(TonerColor::Black),
                 |l, m| Toner::new(l, m, None),
-            )
-            .await?;
-
-        let cyan_toner = self
-            .fetch_single_supply(
+            ),
+            self.fetch_single_supply(
                 oids,
                 params,
                 PrinterSupply::Toner,
                 Some(TonerColor::Cyan),
                 |l, m| Toner::new(l, m, None),
-            )
-            .await?;
-
-        let magenta_toner = self
-            .fetch_single_supply(
+            ),
+            self.fetch_single_supply(
                 oids,
                 params,
                 PrinterSupply::Toner,
                 Some(TonerColor::Magenta),
                 |l, m| Toner::new(l, m, None),
-            )
-            .await?;
-
-        let yellow_toner = self
-            .fetch_single_supply(
+            ),
+            self.fetch_single_supply(
                 oids,
                 params,
                 PrinterSupply::Toner,
                 Some(TonerColor::Yellow),
                 |l, m| Toner::new(l, m, None),
-            )
-            .await?;
-
+            ),
+        )?;
         Ok(Toners {
-            black_toner,
-            cyan_toner,
-            magenta_toner,
-            yellow_toner,
+            black_toner: black,
+            cyan_toner: cyan,
+            magenta_toner: magenta,
+            yellow_toner: yellow,
         })
     }
 

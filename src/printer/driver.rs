@@ -31,6 +31,12 @@ pub struct DriverManager {
     drivers: Vec<Box<dyn PrinterDriver>>,
 }
 
+impl Default for DriverManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DriverManager {
     /// Initializes the manager with the registry of supported drivers.
     ///

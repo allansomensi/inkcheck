@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::{fs, path::PathBuf};
 
 /// A static directory containing printer json files.
-static INTERNAL_DATA_DIR: Dir = include_dir!("src/data");
+static INTERNAL_DATA_DIR: Dir = include_dir!("assets/data");
 
 /// Loads printer data from a JSON file based on the brand and model.
 ///
