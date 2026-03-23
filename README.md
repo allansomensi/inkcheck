@@ -1,14 +1,14 @@
 # Inkcheck 🖨️
 
 [![Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/allansomensi/inkcheck/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Inkcheck** is a powerful and fast CLI tool built in Rust to monitor printer supply levels via **SNMP**.
 
 It supports both **SNMP v1/v2c/v3**, allowing you to check toners, drums, fusers, and waste reservoirs for a wide range of printers. It works with both IP addresses and Hostnames.
 
-<img width="427" height="493" alt="demo" src="https://github.com/user-attachments/assets/94596f00-497d-4e0d-acb8-71fbcfd11006" />
+<img width="481" height="526" alt="demo" src="https://github.com/user-attachments/assets/012f9004-c600-4711-bf8f-1c9cd4baa873" />
 
 ## 🚀 Features
 
