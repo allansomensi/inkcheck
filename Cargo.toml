@@ -20,18 +20,17 @@ eula = "wix/Eula.rtf"
 
 [dependencies]
 async-trait = "0.1.89"
-chrono = "0.4.43"
-clap = { version = "4.5.57", features = ["derive"] }
+chrono = "0.4.44"
+clap = { version = "4.6", features = ["derive"] }
 colored = "3.1.1"
 directories = "6.0.0"
 include_dir = "0.7.4"
-indicatif = "0.18.3"
+indicatif = "0.18.4"
 mdns-sd = "0.18"
-openssl = { version = "0.10.75", features = ["vendored"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-snmp2 = { version = "0.4.14", features = ["heap_buffers", "tokio", "v3"] }
-tokio = { version = "1.49.0", features = ["full"] }
+snmp2 = { version = "0.5.1", features = ["heap_buffers"] }
+tokio = { version = "1.50.0", features = ["full"] }
 toml = "0.9.11"
 
 [dev-dependencies.cargo-husky]
@@ -47,9 +46,8 @@ features = [
 ]
 
 [patch.crates-io]
-snmp2 = { git = "https://github.com/allansomensi/snmp2.git", rev = "a2db1b8add935d2419c6e6ec64d228a7fabe026c" }
+snmp2 = { git = "https://github.com/roboplc/snmp2.git", rev = "9234ce3c26ff06805f9a7136b67673f7c9e662b2" }
 
-# The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"

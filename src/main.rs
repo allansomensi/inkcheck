@@ -9,19 +9,10 @@ mod utils;
 use clap::Parser;
 use cli::args::Args;
 use error::{AppError, ErrorKind};
-use openssl::provider::Provider;
 use std::process;
 
 #[tokio::main]
 async fn main() {
-    // Load legacy provider for older algorithms.
-    let _legacy_guard = Provider::try_load(None, "legacy", true)
-        .map(Some)
-        .unwrap_or_else(|e| {
-            eprintln!("Warning: Failed to load OpenSSL Legacy Provider: {e}");
-            None // Continue execution without legacy support
-        });
-
     if let Err(e) = run().await {
         eprintln!("Error: {e}");
         process::exit(1);
