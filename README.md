@@ -167,12 +167,13 @@ Supports multiple visual themes for better readability and personalization. Belo
 Below is a list of printers that have been tested:
 
 - Brother MFC-L6702DW
-- Brother DCP-8157DN
-- Brother DCP-8152DN
-- Brother MFC-7460DN
 - Brother MFC-L8900CDW
-- Brother DCP-L5652DN
 - Brother MFC-J6935DW
+- Brother MFC-7460DN
+- Brother DCP-L5652DN
+- Brother DCP-8152DN
+- Brother DCP-8157DN
+- Brother HL-L6202DW
 - Brother HL-L2360DW
 - Brother HL-5350DN
 - Brother L2540
